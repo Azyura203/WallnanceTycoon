@@ -1,3 +1,8 @@
+
+![image](https://github.com/user-attachments/assets/9a7cda6a-1c5a-4377-bdc1-d9951c85d524)
+
+
+
 # 💸 Wallnance Tycoon 📈
 
 **Wallnance Tycoon** is a real-time, market simulation tycoon built with **Expo** and **React Native**. Trade meme coins, invest in fictional shares, survive volatile market news, and build your empire like a true digital CEO. Think Wall Street meets meme culture... with pixel bosses. 🐸📉🚀
