@@ -1,5 +1,6 @@
 // hooks/useMarketPrices.ts
 import { Key, useEffect, useState } from 'react';
+import { useMarketNews } from './useMarketNews';
 
 type MarketItem = {
   id: Key | null | undefined;
@@ -72,16 +73,62 @@ export function useMarketPrices() {
       price: 2000,
       change: 0,
       direction: 'same',
+    },
+    {
+      id: '8',
+      emoji: '🥩',
+      name: 'StakeToken',
+      price: 420,
+      change: 0,
+      direction: 'same',
+    },
+    {
+      id: '9',
+      emoji: '🧠',
+      name: 'MindCoin',
+      price: 1111,
+      change: 0,
+      direction: 'same',
+    },
+    {
+      id: '10',
+      emoji: '🧻',
+      name: 'ToiletPaper',
+      price: 69,
+      change: 0,
+      direction: 'same',
+    },
+    {
+      id: '11',
+      emoji: '👻',
+      name: 'BooBux',
+      price: 777,
+      change: 0,
+      direction: 'same',
+    },
+    {
+      id: '12',
+      emoji: '🍕',
+      name: 'PizzaFi',
+      price: 999,
+      change: 0,
+      direction: 'same',
     }
   ]);
 
+  const { getActiveImpacts } = useMarketNews();
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setPrices((prev) =>
-        prev.map((item) => {
+      setPrices((prev) => {
+        const activeImpacts = getActiveImpacts();
+        return prev.map((item) => {
+          const basePrice = item.price;
+          const newsImpact = activeImpacts[item.name] || 0;
           const fluctuation = getRandomChange();
-          const newPrice = Math.max(1, item.price + fluctuation); // avoid negative prices
-          const change = parseFloat(fluctuation.toFixed(2));
+          const impactedPrice = Math.max(1, basePrice * (1 + newsImpact));
+          const newPrice = Math.max(1, impactedPrice + fluctuation);
+          const change = parseFloat((newPrice - basePrice).toFixed(2));
           let direction: 'up' | 'down' | 'same' = 'same';
           if (change > 0) direction = 'up';
           else if (change < 0) direction = 'down';
@@ -91,12 +138,16 @@ export function useMarketPrices() {
             change,
             direction,
           };
-        })
-      );
+        });
+      });
     }, 3000); // update every 3 sec
 
     return () => clearInterval(interval);
   }, []);
 
   return prices;
+}
+
+export function getMarketItemByName(prices: MarketItem[], name: string): MarketItem | undefined {
+  return prices.find(item => item.name === name);
 }

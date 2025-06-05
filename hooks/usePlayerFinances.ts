@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-
+import { useMarketPrices, getMarketItemByName } from './useMarketPrices';
+import { saveGameData } from '@/utils/saveGame';
 const BALANCE_KEY = '@wallnance_balance';
 const PORTFOLIO_KEY = '@wallnance_portfolio';
 const LAST_UPDATE_KEY = '@wallnance_last_update';
@@ -37,6 +38,7 @@ const useFinanceStore = create<FinanceStore>((set) => ({
 export function usePlayerFinances() {
   const { balance, portfolio, lastUpdate, setBalance, setPortfolio, setLastUpdate } = useFinanceStore();
   const [isLoading, setIsLoading] = useState(true);
+  const prices = useMarketPrices();
 
   // Load finances on mount
   useEffect(() => {
@@ -144,6 +146,15 @@ export function usePlayerFinances() {
     await saveFinances(newBalance, newPortfolio);
   };
 
+  const buyFromMarket = async (name: string, quantity: number) => {
+    const marketItem = getMarketItemByName(prices, name);
+    if (!marketItem) {
+      throw new Error(`Asset "${name}" not found in market`);
+    }
+
+    await buyCoin(name, quantity, marketItem.price);
+  };
+
   return {
     balance,
     portfolio,
@@ -152,5 +163,6 @@ export function usePlayerFinances() {
     updateBalance,
     buyCoin,
     sellCoin,
+    buyFromMarket,
   };
 }

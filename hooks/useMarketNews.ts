@@ -10,6 +10,7 @@ export interface NewsItem {
   emoji: string;
   impact: number;
   type: 'positive' | 'negative' | 'neutral';
+  applied?: boolean;
 }
 
 const NEWS_STORAGE_KEY = '@wallnance_market_news';
@@ -63,10 +64,12 @@ export function useMarketNews() {
   }, []);
 
   useEffect(() => {
-    if (eventsCount.daily > 0) {
-      generateNews(eventsCount.daily);
-    }
-  }, [eventsCount.daily]);
+    const interval = setInterval(() => {
+      generateNews(1); // Generate one news item every interval
+    }, 10000); // every 10 seconds, you can adjust this interval
+
+    return () => clearInterval(interval);
+  }, []);
 
   const loadNews = async () => {
     try {
@@ -92,6 +95,7 @@ export function useMarketNews() {
   };
 
   const generateNews = async (count: number) => {
+    console.log("Generating market news:", count);
     const newItems: NewsItem[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -111,7 +115,8 @@ export function useMarketNews() {
         headline,
         emoji: coin.emoji,
         impact: template.impact,
-        type
+        type,
+        applied: false
       });
     }
 
@@ -120,8 +125,29 @@ export function useMarketNews() {
     await saveNews(updatedNews);
   };
 
+  const getActiveImpacts = () => {
+    const impacts: Record<string, number> = {};
+
+    const updatedNews = news.map(item => {
+      if (!item.applied) {
+        if (!impacts[item.coin]) {
+          impacts[item.coin] = 0;
+        }
+        impacts[item.coin] += item.impact / 100;
+        return { ...item, applied: true };
+      }
+      return item;
+    });
+
+    setNews(updatedNews);
+    saveNews(updatedNews);
+
+    return impacts;
+  };
+
   return {
     news,
-    generateNews
+    generateNews,
+    getActiveImpacts
   };
 }

@@ -18,18 +18,18 @@ import GameButton from './GameButton';
 import { useCompanyName } from '@/hooks/useCompanyName';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const COMPANY_NAMES_KEY = '@wallnance_company_names';
+const PLAYER_NAMES_KEY = '@wallnance_player_names';
 
 export default function StartupScreen() {
-  const [companyNameInput, setCompanyNameInput] = useState('');
+  const [playerNameInput, setPlayerNameInput] = useState('');
   const [nameError, setNameError] = useState('');
-  const [previousNames, setPreviousNames] = useState<string[]>([]);
-  const { setCompanyName } = useCompanyName();
+  const [previousPlayers, setPreviousPlayers] = useState<string[]>([]);
+  const { setCompanyName: setPlayerName } = useCompanyName();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   
   useEffect(() => {
-    loadPreviousNames();
+    loadPreviousPlayers();
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -44,61 +44,76 @@ export default function StartupScreen() {
     ]).start();
   }, []);
 
-  const loadPreviousNames = async () => {
+  const loadPreviousPlayers = async () => {
     try {
-      const names = await AsyncStorage.getItem(COMPANY_NAMES_KEY);
+      const names = await AsyncStorage.getItem(PLAYER_NAMES_KEY);
       if (names) {
-        setPreviousNames(JSON.parse(names));
+        setPreviousPlayers(JSON.parse(names));
       }
     } catch (error) {
       console.error('Error loading previous names:', error);
     }
   };
 
-  const savePreviousName = async (name: string) => {
+  const savePreviousPlayer = async (name: string) => {
     try {
-      const updatedNames = [...new Set([name, ...previousNames])].slice(0, 5);
-      await AsyncStorage.setItem(COMPANY_NAMES_KEY, JSON.stringify(updatedNames));
-      setPreviousNames(updatedNames);
+      const updatedPlayers = [...new Set([name, ...previousPlayers])].slice(0, 5);
+      await AsyncStorage.setItem(PLAYER_NAMES_KEY, JSON.stringify(updatedPlayers));
+      setPreviousPlayers(updatedPlayers);
     } catch (error) {
       console.error('Error saving previous names:', error);
     }
   };
   
   const handleStartGame = async () => {
-    const name = companyNameInput.trim();
+    const name = playerNameInput.trim();
     if (!name) {
-      setNameError('Please enter a company name');
+      setNameError('Please enter a player name');
       return;
     }
-    
+
     if (name.length < 3) {
-      setNameError('Company name must be at least 3 characters');
+      setNameError('Player name must be at least 3 characters');
       return;
     }
-    
+
     setNameError('');
     try {
-      await setCompanyName(name);
-      await savePreviousName(name);
+      // Removed await AsyncStorage.clear(); to prevent wiping all app state
+      await setPlayerName(name);
+      await savePreviousPlayer(name);
+      const newGameData = {
+        coins: 1000000,
+        playerName: name,
+      };
+      await AsyncStorage.setItem('gameData', JSON.stringify(newGameData));
       router.replace('/(tabs)');
     } catch (error) {
-      setNameError('Failed to save company name. Please try again.');
+      setNameError('Failed to save player name. Please try again.');
     }
   };
 
-  const handleSelectPreviousName = async (name: string) => {
+  const handleSelectPreviousPlayer = async (name: string) => {
     try {
-      await setCompanyName(name);
-      await savePreviousName(name);
+      await setPlayerName(name);
+      await savePreviousPlayer(name);
+      const existingGameData = await AsyncStorage.getItem('gameData');
+      if (!existingGameData) {
+        const defaultData = {
+          coins: 1000000,
+          playerName: name,
+          portfolio: {},
+        };
+        await AsyncStorage.setItem('gameData', JSON.stringify(defaultData));
+      }
       router.replace('/(tabs)');
     } catch (error) {
-      setNameError('Failed to select company. Please try again.');
+      setNameError('Failed to select player. Please try again.');
     }
   };
   
-  const handleCompanyNameChange = (text: string) => {
-    setCompanyNameInput(text);
+  const handlePlayerNameChange = (text: string) => {
+    setPlayerNameInput(text);
     if (nameError && text.trim().length >= 3) {
       setNameError('');
     }
@@ -124,18 +139,21 @@ export default function StartupScreen() {
             }
           ]}
         >
-          <GameLogo />
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <Text style={styles.logoTitle}>🚀 WALLNANCE</Text>
+            <Text style={styles.logoSubtitle}>TYCOON 💼</Text>
+          </View>
           
           <Text style={styles.subtitle}>Build a coin company. Rule the memeverse!</Text>
           
-          {previousNames.length > 0 && (
+          {previousPlayers.length > 0 && (
             <View style={styles.previousNamesContainer}>
-              <Text style={styles.previousNamesTitle}>Previous Companies</Text>
-              {previousNames.map((name, index) => (
+              <Text style={styles.previousNamesTitle}>Previous Players</Text>
+              {previousPlayers.map((name, index) => (
                 <TouchableOpacity
                   key={index}
                   style={styles.previousNameButton}
-                  onPress={() => handleSelectPreviousName(name)}
+                  onPress={() => handleSelectPreviousPlayer(name)}
                 >
                   <Text style={styles.previousNameText}>{name}</Text>
                 </TouchableOpacity>
@@ -143,28 +161,32 @@ export default function StartupScreen() {
             </View>
           )}
           
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Create New Company</Text>
-            <TextInput
-              style={[styles.input, nameError ? styles.inputError : null]}
-              placeholder="e.g. ToTheMoon Corp 🚀"
-              placeholderTextColor={Colors.neutral[400]}
-              value={companyNameInput}
-              onChangeText={handleCompanyNameChange}
-              maxLength={25}
-              autoCapitalize="words"
-            />
-            {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
-          </View>
-          
-          <View style={styles.buttonContainer}>
-            <GameButton
-              title="🎮 Start Game"
-              onPress={handleStartGame}
-              style={styles.startButton}
-              textStyle={styles.startButtonText}
-            />
-          </View>
+          {previousPlayers.length === 0 && (
+            <>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Create New Player</Text>
+                <TextInput
+                  style={[styles.input, nameError ? styles.inputError : null]}
+                  placeholder="e.g. ToTheMoon Player 🚀"
+                  placeholderTextColor={Colors.neutral[400]}
+                  value={playerNameInput}
+                  onChangeText={handlePlayerNameChange}
+                  maxLength={25}
+                  autoCapitalize="words"
+                />
+                {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+              </View>
+
+              <View style={styles.buttonContainer}>
+                <GameButton
+                  title="🎮 Start Game"
+                  onPress={handleStartGame}
+                  style={styles.startButton}
+                  textStyle={styles.startButtonText}
+                />
+              </View>
+            </>
+          )}
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -267,5 +289,20 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     color: Colors.neutral[800],
+  },
+  logoTitle: {
+    fontSize: 34,
+    fontWeight: 'bold',
+    color: '#6A5ACD',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+  },
+  logoSubtitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#FF6347',
+    letterSpacing: 1.2,
+    textAlign: 'center',
+    marginTop: 4,
   }
 });

@@ -121,7 +121,7 @@ export default function DashboardScreen() {
           <DashboardButton 
             icon={Users} 
             label="🏢 Hire Staff"
-            onPress={() => router.push('/team')}
+            onPress={() => router.push('/portfolio')}
           />
           <DashboardButton 
             icon={TrendingUp} 

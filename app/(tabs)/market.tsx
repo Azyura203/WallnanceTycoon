@@ -7,8 +7,9 @@ import Layout from '@/constants/Layout';
 import GameButton from '@/components/GameButton';
 import { useMarketNews } from '@/hooks/useMarketNews';
 import { usePlayerFinances } from '@/hooks/usePlayerFinances';
-
+import { saveGameData } from '@/utils/saveGame';
 import { useMarketPrices } from '@/hooks/useMarketPrices';
+import { useCompanyShares } from '@/hooks/useCompanyShares';
 
 interface Coin {
   id: string;
@@ -39,6 +40,7 @@ export default function MarketScreen() {
   const { balance, portfolio, buyCoin, sellCoin } = usePlayerFinances();
 
   const marketPrices = useMarketPrices();
+  const companyShares = useCompanyShares();
 
 
   const handleCoinPress = (coin: Coin) => {
@@ -66,9 +68,11 @@ export default function MarketScreen() {
         }
         await buyCoin(selectedCoin.name, amount, selectedCoin.price);
         generateNews(1);
+        await saveGameData({ balance, portfolio });
       } else {
         await sellCoin(selectedCoin.name, amount, selectedCoin.price);
         generateNews(1);
+        await saveGameData({ balance, portfolio });
       }
       setSelectedCoin(null);
       setError(null);
@@ -229,12 +233,14 @@ export default function MarketScreen() {
 
         {activeTab === 'trading' ? (
           <>
-            <View style={styles.trendingBanner}>
-              <TrendingUp size={24} color={Colors.warning[600]} style={styles.trendingIcon} />
-              <Text style={styles.trendingText}>
-                Trending: CrypTofu +27% 🚀
-              </Text>
-            </View>
+            {news.length > 0 && (
+              <View style={styles.trendingBanner}>
+                <TrendingUp size={24} color={Colors.warning[600]} style={styles.trendingIcon} />
+                <Text style={styles.trendingText}>
+                  Trending: {news[news.length - 1].coin} {news[news.length - 1].impact > 0 ? '+' : ''}{news[news.length - 1].impact}% 🚀
+                </Text>
+              </View>
+            )}
 
             <View style={styles.coinList}>
               {marketPrices.map((coin) => (
@@ -249,6 +255,24 @@ export default function MarketScreen() {
                   }}
                 />
               ))}
+            </View>
+
+            <View style={{ marginTop: Layout.spacing.xl }}>
+              <Text style={styles.title}>Company Shares</Text>
+              <View style={styles.coinList}>
+                {companyShares.map((share) => (
+                  <CoinCard
+                    key={share.id}
+                    coin={{
+                      id: String(share.id ?? ''),
+                      name: share.name,
+                      emoji: share.emoji ?? '🏢',
+                      price: share.price,
+                      change: share.change,
+                    }}
+                  />
+                ))}
+              </View>
             </View>
           </>
         ) : (

@@ -50,6 +50,7 @@ export default function TabLayout() {
     return () => clearInterval(interval);
   }, []);
 
+  // Returns the current in-game time for the player in Y/M/W format
   const getFormattedTime = () => {
     const weeks = (ticks % 4) + 1;
     const months = Math.floor(ticks / 4) % 12 + 1;
@@ -67,7 +68,7 @@ export default function TabLayout() {
     <View style={{ flex: 1 }}>
       <View style={styles.playTimeOverlay}>
         <Text style={styles.playTimeText}>
-          {getFormattedTime()} · {formatMoney(balance)}
+          {getFormattedTime()} · {formatMoney(balance)} {/* Player Balance */}
         </Text>
       </View>
       <Tabs
@@ -103,9 +104,9 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="team"
+          name="portfolio"
           options={{
-            title: 'Team',
+            title: 'portfolio',
             tabBarIcon: ({ color }) => <Users color={color} size={24} />,
           }}
         />

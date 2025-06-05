@@ -5,8 +5,10 @@ import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { Settings as SettingsIcon, Volume2, Music, Bell, RefreshCw, Shield, FileText, BookOpen, X, TrendingUp, Users, Smile } from 'lucide-react-native';
 import GameButton from '@/components/GameButton';
+import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -193,6 +195,26 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
         
+        {/* Logout Section */}
+        <View style={styles.settingsSection}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={async () => {
+              await AsyncStorage.removeItem('profileName');
+             
+              await AsyncStorage.removeItem('gameState');
+              setProfileName('');
+             
+              router.replace('/login');
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <Shield size={20} color={Colors.neutral[600]} />
+              <Text style={[styles.settingLabel, { color: 'red' }]}>Logout</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>Version 1.0.0</Text>
         </View>
