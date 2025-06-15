@@ -1,118 +1,130 @@
-[wlc_whitepaper.md](https://github.com/user-attachments/files/20747117/wlc_whitepaper.md)
-![image](https://github.com/user-attachments/assets/9a7cda6a-1c5a-4377-bdc1-d9951c85d524)
 
 
 💸 Wallnance Tycoon 📈
 
-Wallnance Tycoon is a real-time crypto trading simulation game built with React Native and Expo. Trade fun fictional tokens, track your portfolio, manage risk, and flex your market instincts in a beautifully designed mobile-first experience. Think Binance meets meme culture… with better UI and less FOMO. 🐸💰📉
+Wallnance Tycoon is a real-time, API-connected trading simulation game built with Expo and React Native. Buy meme coins, grow your portfolio, dominate the market, and unlock in-game perks — all while learning finance like a boss.
 
-⸻
+✨ Features
 
-🚀 Core Features
-	•	🪙 Real-Time Market – Live token prices with 1-min updates via API
-	•	📈 Portfolio Tracking – View performance, net worth, and distribution
-	•	📊 Dynamic Charts – Line & pie charts with smooth animations
-	•	🧠 Performance Badges – Auto-graded tokens by daily/weekly P&L
-	•	💼 WLC Integration – In-game utility token with real whitepaper
-	•	👾 AI/Bot Traders – Compete against evolving market bots
-	•	🎨 Sleek UI – Modern design, responsive layout, mobile-ready
-	•	🧾 Market Overview Dashboard – Gainers, volumes, live stats
-	•	🔐 Login / Auto Save – Resume where you left off
-	•	🛠️ Modular Codebase – Easy to extend and customize
----
+🧉 Live Market – Trade real-time crypto tokens with dynamic API integration
 
-## 🛠 Setup & Installation
+📉 Animated Market Charts – See sparkline and historical trends with flair
 
-```bash
+💼 Player Portfolio – Track your assets, gains/losses, and performance
+
+🧠 Smart Trading – React to market swings, filter assets, and stay sharp
+
+🧾 WLC Token Integration – Stablecoin with perks, unlocks, and whitepaper
+
+🎮 Immersive UI – Real-world exchange vibe with sleek modal & responsive design
+
+🔍 Sorting & Filtering – Sort by price, volume, change %, and more
+
+📊 Performance Badge – Daily/30-day P&L and pie chart for asset distribution
+
+🤖 Bot Traders – (Coming soon) AI players with evolving strategies
+
+🚀 Setup & Installation
+
 git clone https://github.com/Azyura203/WallnanceTycoon.git
 cd WallnanceTycoon
 npm install
 npx expo start
-## ⚙️ Development Tips
-- Make sure you’re using the correct React & Expo versions.
-- Enable live reload and debug using Expo Go on your mobile device.
-```
-🔧 Requirements
-	•	Node.js & npm
-	•	React Native + Expo SDK 53+
-	•	Expo Go (iOS/Android)
-	•	Internet for market API
 
-💡 Gameplay Highlights
-	•	📉 Buy & Sell Memecoins – CrypTofu, SoyETH, BitRice and more
-	•	🔄 Simulated Trading – API + logic = realistic price movement
-	•	📆 24H / 30D P&L Analysis – Just like real exchanges
-	•	🧠 Learn Finance – Risk-free way to understand markets
-	•	🪙 WLC Tokenomics – Our own in-game stablecoin (Whitepaper included)
+Requirements
 
-📄 View [wlc_whitepaper.md] 
+Node.js & npm
 
+Expo CLI (npm install -g expo-cli)
 
-🖥️ File Structure
+React Native 0.79.3, Expo SDK 53+
+
+Expo Go (iOS/Android) for mobile preview
+
+📌 Gameplay Highlights
+
+💸 Trade Fun Coins: CrypTofu, BitRice, SoyETH, and more
+
+📈 Track Real Trends: API-driven token data with visual charts
+
+🎯 Invest Smart: Time entries, observe trends, watch your net worth grow
+
+🔐 Auto Save & Auth: Save your game and come back anytime
+
+🏰 Real-Use Perks: WLC token unlocks in-game subscriptions & bonuses
+
+🧳 WLC Whitepaper: Read the full whitepaper in-game via sleek modal
+
+📁 Project Structure
+
 /project
 │
-├── app/              # Screens & pages
-├── components/       # UI components (modals, cards, charts)
-├── lib/              # Custom logic (hooks, API, helpers)
-├── store/            # Zustand global state
-├── utils/            # Formatters, calculators
-├── assets/           # Icons, fonts, images
-├── docs/             # Whitepaper & documentation
+├── app/                  # Screens & UI views
+├── components/           # Buttons, Cards, Modals
+├── lib/                  # Custom hooks & logic
+├── store/                # Zustand store
+├── assets/               # Icons & images
+└── utils/                # Helpers & tools
 
-⸻
+🌟 Roadmap
 
-🐞 Known Issues
-	•	🚫 NaN values in some trust/interest outputs
-	•	🌀 Prices can inflate indefinitely if not balanced (being patched)
-	•	🤖 AI traders still in development
+🧠 AI Competitors (Simulated bot trading)
 
-⸻
+🌍 Real-time multiplayer market
+
+🎟️ Voucher redemption system
+
+🎨 Skins: Gothic, Retro, Minimal, more
+
+📓 Weekly P&L Reports
+
+📱 Mobile-first polish & optimizations
+
+🐛 Known Issues
+
+Floating point issues on some tokens (being rounded)
+
+Placeholder charts may render outside card bounds
+
+Certain components still lack full mobile responsiveness
 
 🌐 Web Deployment
 
-You can also build for web using Netlify or Vercel:
+Want to try it on web?
+
 npm run build:web
 
-Upload dist/ to your Netlify project
-Set Base directory = ./
-Build command = npm run build:web
-Publish directory = dist
+Then upload the dist/ folder to Vercel or Netlify.
 
-🎯 Roadmap
-	•	📱 Trading Pairs Support
-	•	👥 Multiplayer / Player Rankings
-	•	🧾 Weekly Finance Reports
-	•	🎨 Custom Themes (Gothic / Minimal)
-	•	🧠 Advanced AI Bot Traders
-	•	🎁 Real Perks for WLC Holders
+🤝 Contributing
 
-⸻
+We welcome:
 
-👷 Contributing
+💡 New token ideas
 
-We’d love your help!
-	•	💬 Suggest features
-	•	🎨 Improve UI
-	•	🪙 Add hilarious new coins
+🎨 UI tweaks & themes
 
-⸻
+🧠 Market logic suggestions
 
 👑 Creator’s Note
 
-Wallnance Tycoon isn’t just a game — it’s a gateway to learning financial literacy in a fun, addictive, and gamified way.
+Wallnance Tycoon isn't just a game — it’s a playground for financial literacy. Gamify the grind. Flip coins. Think smart.
 
-“Start poor. Stay smart. Get rich.”
-— Kane, Founder of KANEDEV
+Start Poor. Stay Smart. Get Rich.Built with 🔥 by Kane — @kanedev
 
- 📷 Screenshots
+📷 Screenshots
 
-Coming soon — or add yours and help this README shine!
-
-⸻
+Coming soon — show off your portfolio or UI and help this project shine!
 
 🧠 Tech Stack
-	•	React Native + Expo
-	•	Zustand for global state
-	•	Custom Hooks for logic
-	•	React Navigation
-	•	Styled with Tailwind-like utility classes
+
+React Native + Expo
+
+Zustand for state management
+
+Custom Hooks
+
+Tailwind-style classes
+
+React Navigation
+
