@@ -1,7 +1,7 @@
 console.log("Loading: app/(tabs)/_layout.tsx");
 
 import { Tabs } from 'expo-router';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, useWindowDimensions } from 'react-native';
 import Colors from '@/constants/Colors';
 import { Chrome as Home, TrendingUp, Users, Trophy, Settings } from 'lucide-react-native';
 import { useTimeTracking } from '@/hooks/useTimeTracking';
@@ -84,14 +84,13 @@ export default function TabLayout() {
           name="index"
           options={{
             title: 'Dashboard',
-            tabBarIcon: ({ color }) => (
-              <View style={styles.tabIconContainer}>
+            tabBarIcon: ({ color, focused }) => (
+              <View style={{
+                backgroundColor: focused ? Colors.primary[100] : 'transparent',
+                borderRadius: 20,
+                padding: 8,
+              }}>
                 <Home color={color} size={24} />
-                {getDaysSinceLastVisit() > 0 ? (
-                  <View style={styles.daysBadge}>
-                    <Text style={styles.daysBadgeText}>{getDaysSinceLastVisit()}d</Text>
-                  </View>
-                ) : null}
               </View>
             ),
           }}
@@ -100,28 +99,60 @@ export default function TabLayout() {
           name="market"
           options={{
             title: 'Market',
-            tabBarIcon: ({ color }) => <TrendingUp color={color} size={24} />,
+            tabBarIcon: ({ color, focused }) => (
+              <View style={{
+                backgroundColor: focused ? Colors.primary[100] : 'transparent',
+                borderRadius: 20,
+                padding: 8,
+              }}>
+                <TrendingUp color={color} size={24} />
+              </View>
+            ),
           }}
         />
         <Tabs.Screen
           name="portfolio"
           options={{
-            title: 'portfolio',
-            tabBarIcon: ({ color }) => <Users color={color} size={24} />,
+            title: 'Portfolio',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={{
+                backgroundColor: focused ? Colors.primary[100] : 'transparent',
+                borderRadius: 20,
+                padding: 8,
+              }}>
+                <Users color={color} size={24} />
+              </View>
+            ),
           }}
         />
         <Tabs.Screen
           name="competitors"
           options={{
             title: 'Rankings',
-            tabBarIcon: ({ color }) => <Trophy color={color} size={24} />,
+            tabBarIcon: ({ color, focused }) => (
+              <View style={{
+                backgroundColor: focused ? Colors.primary[100] : 'transparent',
+                borderRadius: 20,
+                padding: 8,
+              }}>
+                <Trophy color={color} size={24} />
+              </View>
+            ),
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
             title: 'Settings',
-            tabBarIcon: ({ color }) => <Settings color={color} size={24} />,
+            tabBarIcon: ({ color, focused }) => (
+              <View style={{
+                backgroundColor: focused ? Colors.primary[100] : 'transparent',
+                borderRadius: 20,
+                padding: 8,
+              }}>
+                <Settings color={color} size={24} />
+              </View>
+            ),
           }}
         />
       </Tabs>

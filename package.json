@@ -17,7 +17,6 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/native": "^7.1.6",
     "dotenv-expand": "^12.0.2",
-    "expo": "^53.0.9",
     "expo-blur": "~14.1.4",
     "expo-camera": "~16.1.6",
     "expo-constants": "~17.1.6",
@@ -34,7 +33,8 @@
     "lucide-react-native": "^0.511.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "react-native": "0.79.3",
+    "react-native": "^0.79.3",
+    "react-native-chart-kit": "^6.12.0",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
@@ -43,12 +43,16 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
+    "victory-native": "^41.17.4",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.27.4",
     "@babel/preset-typescript": "^7.27.1",
     "@types/react": "~19.0.10",
+    "@types/react-native": "^0.72.8",
+    "@types/victory": "^33.1.5",
+    "expo": "^53.0.11",
     "typescript": "^5.8.3"
   }
 }

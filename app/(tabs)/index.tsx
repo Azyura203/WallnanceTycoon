@@ -1,4 +1,3 @@
-
 console.log("Loading: app/(tabs)/index.tsx");
 // Helper to format money values
 const formatMoney = (num: number): string => {
@@ -9,41 +8,35 @@ const formatMoney = (num: number): string => {
   return `$${num.toFixed(2)}`;
 };
 
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { LineChart as LineChart, TrendingUp, Users, Newspaper } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import { useCompanyName } from '@/hooks/useCompanyName';
 import { usePlayerFinances } from '@/hooks/usePlayerFinances';
+import { useMarketPrices } from '@/hooks/useMarketPrices';
 
-type StaffStatus = 'active' | 'idle' | 'stressed';
-
-const statusStyleMap: Record<StaffStatus, keyof typeof styles> = {
-  active: 'statusActive',
-  idle: 'statusIdle',
-  stressed: 'statusStressed',
-};
-
-const StaffMember = ({ name, role, status }: { name: string; role: string; status: StaffStatus }) => {
-  const statusEmoji = {
-    active: '🟢',
-    idle: '🟡',
-    stressed: '🔴'
-  };
-
-  return (
-    <View style={styles.staffMember}>
-      <View style={styles.staffInfo}>
-        <Text style={styles.staffName}>{name}</Text>
-        <Text style={styles.staffRole}>{role}</Text>
+const MiniCard = ({ title, items }: any) => (
+  <View style={styles.miniCard}>
+    <Text style={styles.miniCardTitle}>{title}</Text>
+    {items.map((coin: any) => (
+      <View key={coin.name} style={styles.miniRow}>
+        <Text style={{ flex: 1 }}>{coin.emoji} {coin.name}</Text>
+        <Text style={{ width: 80, textAlign: 'right' }}>
+          ${coin.price.toFixed(2)} 
+        </Text>
+        <Text style={{
+          width: 60,
+          textAlign: 'right',
+          color: coin.change >= 0 ? Colors.success[600] : Colors.error[600],
+        }}>
+          {coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%
+        </Text>
       </View>
-      <Text style={[styles.staffStatus, styles[statusStyleMap[status] as keyof typeof styles]]}>
-        {statusEmoji[status]} {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Text>
-    </View>
-  );
-};
+    ))}
+  </View>
+);
 
 const DashboardButton = ({ icon: Icon, label, onPress }: any) => (
   <Pressable style={styles.dashboardButton} onPress={onPress}>
@@ -55,6 +48,26 @@ const DashboardButton = ({ icon: Icon, label, onPress }: any) => (
 export default function DashboardScreen() {
   const { companyName } = useCompanyName();
   const { balance, portfolio } = usePlayerFinances();
+
+  const tokens = useMarketPrices();
+
+  // Helper to get top N items by key, safe for undefined/null/empty arrays
+  const topN = (arr: any[] = [], key: string, n = 3, desc = true) =>
+    [...(arr || [])]
+      .sort((a, b) => desc ? b[key] - a[key] : a[key] - b[key])
+      .slice(0, n);
+
+  if (!tokens || tokens.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ padding: 20, fontSize: 16 }}>📉 Loading market data...</Text>
+      </View>
+    );
+  }
+
+  const hotCoins = topN(tokens, 'price', 3);
+  const topGainers = topN(tokens, 'change', 3);
+  const topVolume = topN(tokens, 'volume', 3);
 
   // Calculate total portfolio value
   const calculateTrust = () => {
@@ -70,8 +83,8 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>{companyName || 'Company'} HQ</Text>
-        <Text style={styles.subtitle}>CEO Dashboard</Text>
+        <Text style={styles.title}>Wallnance Overview</Text>
+        <Text style={styles.subtitle}>All your assets & market insights in one place</Text>
       </View>
 
       <View style={styles.statsContainer}>
@@ -84,25 +97,25 @@ export default function DashboardScreen() {
           <Text style={styles.statValue}>📈 {calculateTrust()}%</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Market Stress</Text>
-          <Text style={styles.statValue}>😰 Medium</Text>
+          <Text style={styles.statLabel}>Equity Value</Text>
+          <Text style={styles.statValue}>🏦 {formatMoney(balance * 1.2)}</Text>
         </View>
       </View>
 
-      <View style={styles.newsTickerContainer}>
-        <Text style={styles.newsTickerLabel}>BREAKING NEWS</Text>
-        <Text style={styles.newsTickerContent}>
-          New trend: CrypTofu is exploding! 🚀
+      <View style={styles.cardRow}>
+        <MiniCard title="Hot Coins" items={hotCoins} />
+        <MiniCard title="Top Gainer Coin" items={topGainers} />
+        <MiniCard title="Top Volume Coin" items={topVolume} />
+      </View>
+
+      <View style={styles.marketPreviewCard}>
+        <Text style={styles.marketPreviewTitle}>Market Snapshot</Text>
+        <Text style={styles.marketPreviewSubtitle}>
+          {topGainers[0] && typeof topGainers[0].change === 'number' &&
+           topVolume[0] && typeof topVolume[0].volume === 'number'
+            ? `${topGainers[0].name} ${topGainers[0].change >= 0 ? 'up' : 'down'} ${Math.abs(topGainers[0].change).toFixed(1)}% · ${topVolume[0].name} vol $${topVolume[0].volume.toLocaleString()}`
+            : '📉 Market data loading...'}
         </Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Staff</Text>
-        <View style={styles.staffContainer}>
-          <StaffMember name="Sarah Chen" role="Senior Analyst 📊" status="active" />
-          <StaffMember name="Mike Johnson" role="PR Manager 🎯" status="idle" />
-          <StaffMember name="Alex Kim" role="Dev Intern 💻" status="stressed" />
-        </View>
       </View>
 
       <View style={styles.section}>
@@ -110,23 +123,13 @@ export default function DashboardScreen() {
         <View style={styles.buttonsGrid}>
           <DashboardButton 
             icon={LineChart} 
-            label="📊 Trade Room"
+            label="💹 View Markets"
             onPress={() => router.push('/market')}
           />
           <DashboardButton 
-            icon={Newspaper} 
-            label="📰 Market News"
-            onPress={() => {}}
-          />
-          <DashboardButton 
             icon={Users} 
-            label="🏢 Hire Staff"
+            label="👛 Portfolio"
             onPress={() => router.push('/portfolio')}
-          />
-          <DashboardButton 
-            icon={TrendingUp} 
-            label="⚔️ Competitors"
-            onPress={() => router.push('/competitors')}
           />
         </View>
       </View>
@@ -185,25 +188,23 @@ const styles = StyleSheet.create({
     color: Colors.primary[700],
     textAlign: 'center',
   },
-  newsTickerContainer: {
-    backgroundColor: Colors.accent[100],
+  marketPreviewCard: {
+    backgroundColor: Colors.card,
     borderRadius: Layout.borderRadius.md,
     padding: Layout.spacing.md,
     marginBottom: Layout.spacing.xl,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.accent[400],
     ...Layout.shadows.small,
   },
-  newsTickerLabel: {
+  marketPreviewTitle: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 12,
-    color: Colors.accent[700],
+    fontSize: 16,
+    color: Colors.primary[700],
     marginBottom: Layout.spacing.xs,
   },
-  newsTickerContent: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 16,
-    color: Colors.accent[800],
+  marketPreviewSubtitle: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: Colors.neutral[600],
   },
   section: {
     marginBottom: Layout.spacing.xl,
@@ -213,51 +214,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: Colors.primary[700],
     marginBottom: Layout.spacing.md,
-  },
-  staffContainer: {
-    gap: Layout.spacing.md,
-  },
-  staffMember: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Layout.spacing.md,
-    backgroundColor: Colors.card,
-    borderRadius: Layout.borderRadius.md,
-    ...Layout.shadows.small,
-  },
-  staffInfo: {
-    flex: 1,
-  },
-  staffName: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 16,
-    color: Colors.neutral[800],
-    marginBottom: 2,
-  },
-  staffRole: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 14,
-    color: Colors.neutral[600],
-  },
-  staffStatus: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 13,
-    paddingHorizontal: Layout.spacing.sm,
-    paddingVertical: Layout.spacing.xs,
-    borderRadius: Layout.borderRadius.sm,
-  },
-  statusActive: {
-    backgroundColor: Colors.success[50],
-    color: Colors.success[700],
-  },
-  statusIdle: {
-    backgroundColor: Colors.warning[50],
-    color: Colors.warning[700],
-  },
-  statusStressed: {
-    backgroundColor: Colors.error[50],
-    color: Colors.error[700],
   },
   buttonsGrid: {
     flexDirection: 'row',
@@ -279,5 +235,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary[700],
     textAlign: 'center',
+  },
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Layout.spacing.lg,
+    gap: Layout.spacing.md,
+  },
+  miniCard: {
+    flex: 1,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.md,
+    padding: Layout.spacing.sm,
+    ...Layout.shadows.small,
+  },
+  miniCardTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.primary[700],
+    marginBottom: 4,
+  },
+  miniRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 2,
   },
 });

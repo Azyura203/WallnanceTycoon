@@ -1,169 +1,86 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Trophy } from 'lucide-react-native';
+import SparkLine from '@/components/SparkLine';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
-import { useEffect, useState } from 'react';
 
-interface Competitor {
-  id: string;
-  rank: number;
-  name: string;
-  netWorth: number;
-  trend: string;
-  isPlayer?: boolean;
+interface TradingPair {
+  pair: string;
+  price: number;
+  change: number;    // percent
+  volume: number;    // in base currency
+  history: number[];
 }
 
-const initialCompetitors: Competitor[] = [
-  { id: '1', rank: 1, name: 'MemeDaddy Corp', netWorth: 760000, trend: '🚀' },
-  { id: '2', rank: 2, name: 'ToTheMoon Bros', netWorth: 550000, trend: '📈' },
-  { id: '3', rank: 3, name: 'Wallnance Inc.', netWorth: 488000, trend: '📉', isPlayer: true },
-  { id: '4', rank: 4, name: 'Bork & Sons', netWorth: 422000, trend: '😬' },
-  { id: '5', rank: 5, name: 'CrypTofu Mafia', netWorth: 390000, trend: '🔻' },
+const initialPairs: TradingPair[] = [
+  { pair: 'WLC/ETH', price: 0.0123, change: 3.4, volume: 120, history: [0.011,0.0115,0.012,0.0123] },
+  { pair: 'WLC/BTC', price: 0.00004, change: -1.2, volume: 0.8, history: [0.000042,0.00004,0.000039,0.00004] },
+  { pair: 'WLC/USDT', price: 1.3, change: 0.0, volume: 300, history: [1.25,1.28,1.3,1.3] },
 ];
 
-const CompetitorCard = ({ competitor }: { competitor: Competitor }) => (
-  <View style={[
-    styles.competitorCard,
-    competitor.isPlayer && styles.playerCard
-  ]}>
-    <View style={styles.rankContainer}>
-      <Text style={styles.rankText}>#{competitor.rank}</Text>
-      {competitor.rank === 1 && <Trophy size={20} color={Colors.warning[500]} />}
-    </View>
-    
-    <View style={styles.infoContainer}>
-      <Text style={styles.companyName}>
-        {competitor.isPlayer ? 'YOU: ' : ''}{competitor.name}
-      </Text>
-      <Text style={styles.netWorth}>
-        💰 ${competitor.netWorth.toLocaleString()}
-      </Text>
-    </View>
-    
-    <Text style={styles.trendEmoji}>{competitor.trend}</Text>
-  </View>
-);
-
-export default function CompetitorsScreen() {
-  const [competitorsData, setCompetitorsData] = useState<Competitor[]>(initialCompetitors);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCompetitorsData(prev => {
-        const shuffled = [...prev].sort(() => Math.random() - 0.5);
-        return shuffled.map((comp, index) => ({ ...comp, rank: index + 1 }));
-      });
-    }, 8000); // Every 8 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
+export default function TradingPairsScreen() {
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Rankings</Text>
-          <Text style={styles.subtitle}>Top Trading Companies</Text>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.title}>Trading Pairs</Text>
+        <View style={styles.headerRow}>
+          <Text style={[styles.col, styles.colPair]}>Pair</Text>
+          <Text style={[styles.col, styles.colPrice]}>Price</Text>
+          <Text style={[styles.col, styles.colChange]}>24h %</Text>
+          <Text style={[styles.col, styles.colVolume]}>24h Vol</Text>
+          <Text style={[styles.col, styles.colChart]}>Chart</Text>
         </View>
-
-        <View style={styles.rankingsContainer}>
-          {competitorsData.map(competitor => (
-            <CompetitorCard key={competitor.id} competitor={competitor} />
-          ))}
-        </View>
-
-        <View style={styles.quoteContainer}>
-          <Text style={styles.quoteText}>
-            "The only way up... is through the competition."
-          </Text>
-        </View>
+        {initialPairs.map((p) => (
+          <View key={p.pair} style={styles.row}>
+            <Text style={[styles.col, styles.colPair]}>{p.pair}</Text>
+            <Text style={[styles.col, styles.colPrice]}>${p.price.toFixed(4)}</Text>
+            <Text style={[
+                styles.col,
+                styles.colChange,
+                { color: p.change >= 0 ? Colors.success[600] : Colors.error[600] }
+              ]}>
+              {p.change >= 0 ? '+' : ''}{p.change.toFixed(2)}%
+            </Text>
+            <Text style={[styles.col, styles.colVolume]}>
+              {p.volume.toLocaleString()}
+            </Text>
+            <View style={styles.colChart}>
+              <SparkLine points={p.history} positive={p.change >= 0} />
+            </View>
+          </View>
+        ))}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: Layout.spacing.lg,
-  },
-  header: {
-    marginBottom: Layout.spacing.xl,
-    marginTop: Layout.spacing.xl,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  contentContainer: { padding: Layout.spacing.lg },
   title: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 32,
+    fontSize: 24,
     color: Colors.primary[700],
-    marginBottom: Layout.spacing.xs,
+    marginBottom: Layout.spacing.md,
   },
-  subtitle: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 18,
-    color: Colors.neutral[600],
+  headerRow: {
+    flexDirection: 'row',
+    paddingBottom: Layout.spacing.sm,
+    borderBottomWidth: 1,
+    borderColor: Colors.neutral[300],
+    marginBottom: Layout.spacing.sm,
   },
-  rankingsContainer: {
-    gap: Layout.spacing.md,
-    marginBottom: Layout.spacing.xl,
-  },
-  competitorCard: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.card,
     borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.lg,
-    ...Layout.shadows.small,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
   },
-  playerCard: {
-    backgroundColor: Colors.primary[50],
-    borderWidth: 2,
-    borderColor: Colors.primary[200],
-  },
-  rankContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Layout.spacing.xs,
-    minWidth: 50,
-  },
-  rankText: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 18,
-    color: Colors.neutral[600],
-  },
-  infoContainer: {
-    flex: 1,
-    marginLeft: Layout.spacing.md,
-  },
-  companyName: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 16,
-    color: Colors.neutral[800],
-    marginBottom: 2,
-  },
-  netWorth: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 14,
-    color: Colors.neutral[600],
-  },
-  trendEmoji: {
-    fontSize: 24,
-    marginLeft: Layout.spacing.md,
-  },
-  quoteContainer: {
-    alignItems: 'center',
-    marginTop: Layout.spacing.lg,
-    marginBottom: Layout.spacing.xxl,
-  },
-  quoteText: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 16,
-    color: Colors.neutral[500],
-    fontStyle: 'italic',
-  },
+  col: { fontFamily: 'Nunito-Regular', fontSize: 14 },
+  colPair: { flex: 2 },
+  colPrice: { flex: 1, textAlign: 'right' },
+  colChange: { flex: 1, textAlign: 'right' },
+  colVolume: { flex: 1, textAlign: 'right' },
+  colChart: { flex: 1, alignItems: 'flex-end' },
 });

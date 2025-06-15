@@ -1,5 +1,5 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./node_modules/expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
     "allowJs": true,
@@ -14,9 +14,10 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["expo"]
+    "types": ["expo", "victory-native"]
   },
   "include": [
+    "types",
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",

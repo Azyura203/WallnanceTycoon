@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Newspaper } from 'lucide-react-native';
+import SparkLine from '@/components/SparkLine';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import GameButton from '@/components/GameButton';
@@ -31,11 +31,61 @@ const formatMoney = (num: number): string => {
   return `$${num.toFixed(2)}`;
 };
 
+// CoinFlipAnimation component for trade confirmation
+const CoinFlipAnimation = ({ visible }: { visible: boolean }) => {
+  const flipAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      flipAnim.setValue(0);
+      Animated.loop(
+        Animated.timing(flipAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        { iterations: 1 }
+      ).start();
+    }
+  }, [visible]);
+
+  const rotateY = flipAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  if (!visible) return null;
+
+  return (
+    <View style={{ position: 'absolute', top: '40%', left: '45%', zIndex: 10 }}>
+      <Animated.View
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          backgroundColor: Colors.primary[500],
+          justifyContent: 'center',
+          alignItems: 'center',
+          transform: [{ rotateY }],
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 4,
+        }}
+      >
+        <Text style={{ fontSize: 28, color: 'white', fontWeight: 'bold' }}>W</Text>
+      </Animated.View>
+    </View>
+  );
+};
+
 export default function MarketScreen() {
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [activeTab, setActiveTab] = useState<'trading' | 'news'>('trading');
   const [error, setError] = useState<string | null>(null);
+  const [showCoinFlip, setShowCoinFlip] = useState(false);
+  const [showWLCModal, setShowWLCModal] = useState(false);
   const { news, generateNews } = useMarketNews();
   const { balance, portfolio, buyCoin, sellCoin } = usePlayerFinances();
 
@@ -74,7 +124,11 @@ export default function MarketScreen() {
         generateNews(1);
         await saveGameData({ balance, portfolio });
       }
-      setSelectedCoin(null);
+      setShowCoinFlip(true);
+      setTimeout(() => {
+        setShowCoinFlip(false);
+        setSelectedCoin(null);
+      }, 1000);
       setError(null);
     } catch (err: any) {
       setError(err.message);
@@ -116,50 +170,141 @@ export default function MarketScreen() {
   };
 
   const CoinCard = ({ coin }: { coin: Coin }) => {
-    const profitLoss = getProfitLoss(coin.name, coin.price);
+    const { width } = useWindowDimensions();
+    const isWide = width >= 600;
+
+    // Fade-in animation for percent change
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }, [coin.change]);
+
+    // Price history tracking for sparkline
+    const [history, setHistory] = useState<number[]>([coin.price]);
+    useEffect(() => {
+      setHistory((prev) => {
+        const updated = [...prev, coin.price];
+        return updated.length > 10 ? updated.slice(-10) : updated;
+      });
+    }, [coin.price]);
+
+    // Flash animation for background color on price change
+    const flash = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+      flash.setValue(1);
+      Animated.timing(flash, { toValue: 0, duration: 500, useNativeDriver: false }).start();
+    }, [coin.price]);
+    const bgColor = flash.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['transparent', coin.change >= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'],
+    });
+
+    // Responsive layout for wide vs. narrow screens
     return (
-      <Pressable
-        style={styles.coinCard}
-        onPress={() => handleCoinPress(coin)}
-      >
-        <View style={styles.coinInfo}>
-          <Text style={styles.coinEmoji}>{coin.emoji}</Text>
-          <View>
-            <Text style={styles.coinName}>{coin.name}</Text>
-            <Text style={styles.coinPrice}>${coin.price.toFixed(2)}</Text>
-            <Text style={styles.portfolioQuantity}>
-              Owned: {getPortfolioQuantity(coin.name)}
-            </Text>
-            {profitLoss !== null && (
-              <Text
-                style={{
+      <Animated.View style={{ backgroundColor: bgColor }}>
+        <Pressable
+          onPress={() => handleCoinPress(coin)}
+          style={[
+            styles.coinCardBase,
+            isWide ? styles.coinCardWide : styles.coinCardNarrow,
+            { backgroundColor: Colors.card }
+          ]}
+        >
+          {isWide ? (
+            <>
+              {/* Name Column */}
+              <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', gap: Layout.spacing.sm }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: coin.change >= 0 ? Colors.success[500] : Colors.error[500] }} />
+                <Text style={{ fontSize: 22 }}>{coin.emoji}</Text>
+                <View>
+                  <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 16, color: Colors.neutral[900] }}>
+                    {coin.name}
+                  </Text>
+                  <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 12, color: Colors.neutral[500] }}>
+                    {coin.id.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Price Column */}
+              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[800] }}>
+                  ${coin.price.toFixed(2)}
+                </Text>
+              </View>
+
+              {/* 24h Change Column */}
+              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                <Animated.Text style={{
                   fontFamily: 'Nunito-Bold',
                   fontSize: 14,
-                  color: profitLoss >= 0 ? Colors.success[600] : Colors.error[600],
-                  marginTop: 4,
-                }}
-              >
-                {profitLoss >= 0 ? '+' : '-'}{formatMoney(Math.abs(profitLoss))} {profitLoss >= 0 ? 'Profit' : 'Loss'}
-              </Text>
-            )}
-          </View>
-        </View>
-        <View style={styles.trendContainer}>
-          {coin.change >= 0 ? (
-            <ArrowUpRight size={20} color={Colors.success[500]} />
+                  color: coin.change >= 0 ? Colors.success[600] : Colors.error[600],
+                  opacity: fadeAnim,
+                }}>
+                  {coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%
+                </Animated.Text>
+              </View>
+
+              {/* Volume Column */}
+              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 13, color: Colors.neutral[600] }}>
+                  Volume: ${(coin.price * 10000).toLocaleString()}
+                </Text>
+              </View>
+
+              {/* Chart Column */}
+              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                <SparkLine points={history} positive={coin.change >= 0} />
+              </View>
+            </>
           ) : (
-            <ArrowDownRight size={20} color={Colors.error[500]} />
+            <>
+              {/* Name */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: coin.change >= 0 ? Colors.success[500] : Colors.error[500], marginRight: 6 }} />
+                <Text style={{ fontSize: 22 }}>{coin.emoji}</Text>
+                <View>
+                  <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 16, color: Colors.neutral[900] }}>
+                    {coin.name}
+                  </Text>
+                  <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 12, color: Colors.neutral[500] }}>
+                    {coin.id.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+              {/* Responsive stacked info */}
+              <View style={{ marginTop: 8, width: '100%' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 2 }}>
+                  <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[800] }}>
+                    ${coin.price.toFixed(2)}
+                  </Text>
+                  <Text style={{
+                    fontFamily: 'Nunito-Regular',
+                    fontSize: 13,
+                    color: Colors.neutral[600],
+                  }}>
+                    Volume: ${(coin.price * 10000).toLocaleString()}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{
+                    fontFamily: 'Nunito-Bold',
+                    fontSize: 13,
+                    color: coin.change >= 0 ? Colors.success[600] : Colors.error[600],
+                  }}>
+                    {coin.change >= 0 ? '+' : ''}{coin.change}%
+                  </Text>
+                  <SparkLine points={history} positive={coin.change >= 0} />
+                </View>
+              </View>
+            </>
           )}
-          <Text
-            style={[
-              styles.trendText,
-              { color: coin.change >= 0 ? Colors.success[500] : Colors.error[500] },
-            ]}
-          >
-            {coin.change > 0 ? '+' : ''}{coin.change}%
-          </Text>
-        </View>
-      </Pressable>
+        </Pressable>
+      </Animated.View>
     );
   };
 
@@ -207,10 +352,30 @@ export default function MarketScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Coin Flip Animation for trade confirmation */}
+      <CoinFlipAnimation visible={showCoinFlip} />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Market</Text>
-          <Text style={styles.subtitle}>Trade & Track News</Text>
+          <TouchableOpacity style={{ alignSelf: 'flex-end' }} onPress={() => setShowWLCModal(true)}>
+            <Text style={{
+              fontFamily: 'Nunito-Bold',
+              fontSize: 14,
+              color: Colors.primary[600],
+              backgroundColor: Colors.primary[50],
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 20,
+              overflow: 'hidden',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 3,
+            }}>
+              🔍 Learn about WLC
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.subtitle}>Manage Your Crypto Assets & Stay Updated</Text>
           <Text style={styles.balance}>💰 Balance: {formatMoney(balance)}</Text>
         </View>
 
@@ -232,7 +397,7 @@ export default function MarketScreen() {
         </View>
 
         {activeTab === 'trading' ? (
-          <>
+          <View style={styles.section}>
             {news.length > 0 && (
               <View style={styles.trendingBanner}>
                 <TrendingUp size={24} color={Colors.warning[600]} style={styles.trendingIcon} />
@@ -242,23 +407,73 @@ export default function MarketScreen() {
               </View>
             )}
 
-            <View style={styles.coinList}>
-              {marketPrices.map((coin) => (
-                <CoinCard
-                  key={coin.id}
-                  coin={{
-                    id: String(coin.id ?? ''),
-                    name: coin.name,
-                    emoji: coin.emoji ?? '🪙',
-                    price: coin.price,
-                    change: coin.change,
-                  }}
-                />
-              ))}
-            </View>
+            <Text style={styles.sectionTitle}>💱 Available Tokens</Text>
+            {(() => {
+              // API-driven categorization
+              const categories = {
+                Stable: marketPrices.filter(c => c.category === 'Stable'),
+                Meme: marketPrices.filter(c => c.category === 'Meme'),
+                Meta: marketPrices.filter(c => c.category === 'Meta'),
+                Utility: marketPrices.filter(c => c.category === 'Utility'),
+                Layer1: marketPrices.filter(c => c.category === 'Layer1'),
+              };
+              return (
+                <>
+                  {Object.entries(categories).map(([category, coins]) => (
+                    <View key={category} style={{ marginBottom: Layout.spacing.xl }}>
+                      <Text style={styles.sectionTitle}>{category} Tokens</Text>
+                  {/* Header row for coin list - full width aligned with cards */}
+                  <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingHorizontal: Layout.spacing.lg,
+                    marginBottom: 4,
+                  }}>
+                    <Text style={{ flex: 2, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Name</Text>
+                    <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
+                    <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
+                    <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
+                    <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Chart</Text>
+                  </View>
+                      <View style={styles.coinList}>
+                        {coins
+                          .sort((a, b) => b.price - a.price)
+                          .map((coin) => (
+                            <CoinCard
+                              key={coin.id}
+                              coin={{
+                                id: String(coin.id ?? ''),
+                                name: coin.name,
+                                emoji: coin.emoji ?? '🪙',
+                                price: coin.price,
+                                change: coin.change,
+                              }}
+                            />
+                        ))}
+                      </View>
+                    </View>
+                  ))}
+                </>
+              );
+            })()}
 
             <View style={{ marginTop: Layout.spacing.xl }}>
-              <Text style={styles.title}>Company Shares</Text>
+              <Text style={styles.sectionTitle}>🏢 Company Shares</Text>
+              {/* Header row for company shares - full width aligned with cards */}
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingHorizontal: Layout.spacing.lg,
+                marginBottom: 4,
+              }}>
+                <Text style={{ flex: 2, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Name</Text>
+                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
+                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
+                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
+                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Chart</Text>
+              </View>
               <View style={styles.coinList}>
                 {companyShares.map((share) => (
                   <CoinCard
@@ -274,7 +489,7 @@ export default function MarketScreen() {
                 ))}
               </View>
             </View>
-          </>
+          </View>
         ) : (
           <View style={styles.newsList}>
             {news.length > 0 ? (
@@ -313,6 +528,12 @@ export default function MarketScreen() {
                   {getPortfolioQuantity(selectedCoin.name)} coins
                 </Text>
               </View>
+              {/* 24h Change summary */}
+              <View style={{ marginTop: 8 }}>
+                <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 13, textAlign: 'center', color: Colors.neutral[600] }}>
+                  24h Change: {selectedCoin.change >= 0 ? '+' : ''}{selectedCoin.change}%
+                </Text>
+              </View>
 
               <View style={styles.balanceContainer}>
                 <Text style={styles.balanceLabel}>💰 Your Balance</Text>
@@ -339,18 +560,41 @@ export default function MarketScreen() {
                 <Text style={styles.errorText}>{error}</Text>
               )}
 
-              <View style={styles.buttonGroup}>
-                <GameButton
-                  title="💸 Buy"
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: Colors.success[500],
+                    paddingVertical: 14,
+                    marginRight: 8,
+                    borderRadius: 12,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                  }}
                   onPress={() => handleTrade('buy')}
-                  style={styles.buyButton}
-                />
-                <GameButton
-                  title="📉 Sell"
+                >
+                  <Text style={{ color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 16, textAlign: 'center' }}>💸 Buy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: Colors.error[500],
+                    paddingVertical: 14,
+                    marginLeft: 8,
+                    borderRadius: 12,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    opacity: getPortfolioQuantity(selectedCoin.name) === 0 ? 0.6 : 1,
+                  }}
                   onPress={() => handleTrade('sell')}
-                  style={styles.sellButton}
                   disabled={getPortfolioQuantity(selectedCoin.name) === 0}
-                />
+                >
+                  <Text style={{ color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 16, textAlign: 'center' }}>📉 Sell</Text>
+                </TouchableOpacity>
               </View>
 
               <GameButton
@@ -359,9 +603,45 @@ export default function MarketScreen() {
                 style={styles.cancelButton}
                 textStyle={styles.cancelButtonText}
               />
+              {/* Last Updated timestamp */}
+              <Text style={{ fontSize: 12, textAlign: 'center', color: Colors.neutral[500] }}>
+                Last Updated: {new Date().toLocaleTimeString()}
+              </Text>
             </View>
           </View>
         )}
+      </Modal>
+
+      {/* WLC Info Modal */}
+      <Modal
+        visible={showWLCModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowWLCModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>🌟 Wallnance Coin (WLC)</Text>
+            <Text style={styles.subtitle}>
+              Total Supply: 5,000,000 WLC
+            </Text>
+            <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: Colors.neutral[700], marginVertical: 8 }}>
+              WLC is the official currency of Wallnance. Holders unlock premium features and can use it to subscribe to exclusive in-game packages.
+            </Text>
+            <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: Colors.neutral[700], marginBottom: 16 }}>
+              🎁 Early Access Bonus: All early access players receive 1,000 WLC.
+            </Text>
+            <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: Colors.neutral[700], marginBottom: 16 }}>
+              🛡️ Holders receive perks and privileges including airdrops, access to premium analytics, and discounted game items.
+            </Text>
+            <GameButton
+              title="Close"
+              onPress={() => setShowWLCModal(false)}
+              style={styles.cancelButton}
+              textStyle={styles.cancelButtonText}
+            />
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -445,6 +725,24 @@ const styles = StyleSheet.create({
     color: Colors.warning[700],
   },
   coinList: {
+    gap: Layout.spacing.md,
+  },
+  coinCardBase: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderColor: Colors.neutral[200],
+  },
+  coinCardWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  coinCardNarrow: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
     gap: Layout.spacing.md,
   },
   coinCard: {
@@ -562,35 +860,54 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: Colors.card,
-    borderTopLeftRadius: Layout.borderRadius.xl,
-    borderTopRightRadius: Layout.borderRadius.xl,
+    borderRadius: Layout.borderRadius.lg,
+    width: '90%',
     padding: Layout.spacing.xl,
     gap: Layout.spacing.lg,
+    ...Layout.shadows.medium,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.13,
+    shadowRadius: 12,
   },
   modalHeader: {
     alignItems: 'center',
     gap: Layout.spacing.xs,
+    marginBottom: Layout.spacing.sm,
+    backgroundColor: Colors.neutral[50],
+    paddingVertical: Layout.spacing.md,
+    borderRadius: Layout.borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    ...Layout.shadows.medium,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.13,
+    shadowRadius: 8,
   },
   modalTitle: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 24,
-    color: Colors.neutral[800],
+    fontSize: 22,
+    color: Colors.neutral[900],
   },
   modalPrice: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 32,
-    color: Colors.primary[600],
+    fontSize: 24,
+    color: Colors.primary[500],
   },
   portfolioInfo: {
-    backgroundColor: Colors.primary[50],
+    backgroundColor: Colors.neutral[50],
     borderRadius: Layout.borderRadius.md,
     padding: Layout.spacing.md,
-    marginBottom: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
   },
   portfolioLabel: {
     fontFamily: 'Nunito-Regular',
@@ -604,10 +921,12 @@ const styles = StyleSheet.create({
     color: Colors.primary[700],
   },
   balanceContainer: {
-    backgroundColor: Colors.primary[50],
+    backgroundColor: Colors.neutral[50],
     borderRadius: Layout.borderRadius.md,
     padding: Layout.spacing.md,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
   },
   balanceLabel: {
     fontFamily: 'Nunito-Regular',
@@ -621,7 +940,8 @@ const styles = StyleSheet.create({
     color: Colors.primary[700],
   },
   inputContainer: {
-    gap: Layout.spacing.xs,
+    gap: Layout.spacing.sm,
+    marginBottom: Layout.spacing.md,
   },
   inputLabel: {
     fontFamily: 'Nunito-SemiBold',
@@ -635,26 +955,34 @@ const styles = StyleSheet.create({
     padding: Layout.spacing.md,
     fontSize: 18,
     color: Colors.neutral[800],
-    borderWidth: 2,
-    borderColor: Colors.neutral[200],
+    borderWidth: 1,
+    borderColor: Colors.neutral[300],
+    ...Layout.shadows.small,
   },
   buttonGroup: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: Layout.spacing.md,
   },
   buyButton: {
     flex: 1,
     backgroundColor: Colors.success[500],
+    paddingVertical: Layout.spacing.sm,
   },
   sellButton: {
     flex: 1,
     backgroundColor: Colors.error[500],
+    paddingVertical: Layout.spacing.sm,
   },
   cancelButton: {
-    backgroundColor: Colors.neutral[200],
+    backgroundColor: Colors.neutral[300],
+    borderRadius: Layout.borderRadius.md,
+    paddingVertical: Layout.spacing.sm,
   },
   cancelButtonText: {
-    color: Colors.neutral[600],
+    color: Colors.neutral[700],
+    fontSize: 16,
+    textAlign: 'center',
   },
   errorText: {
     fontFamily: 'Nunito-Regular',
@@ -669,5 +997,14 @@ const styles = StyleSheet.create({
     color: Colors.neutral[700],
     textAlign: 'center',
     marginVertical: Layout.spacing.sm,
+  },
+  section: {
+    marginBottom: Layout.spacing.xl,
+  },
+  sectionTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 20,
+    color: Colors.primary[600],
+    marginBottom: Layout.spacing.md,
   },
 });
