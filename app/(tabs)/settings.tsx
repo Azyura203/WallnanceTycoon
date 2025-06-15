@@ -15,6 +15,11 @@ export default function SettingsScreen() {
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+  const [marketSpeed, setMarketSpeed] = useState<'Normal' | 'Fast' | 'Slow'>('Normal');
+  const [coinVolatility, setCoinVolatility] = useState<'Low' | 'Medium' | 'High'>('Medium');
+  const [competitorAI, setCompetitorAI] = useState<'Low' | 'Medium' | 'High'>('Medium');
+  const [emojiMode, setEmojiMode] = useState(true);
+
   const [profileName, setProfileName] = useState('');
   const [companyName, setCompanyName] = useState('');
 
@@ -26,9 +31,17 @@ export default function SettingsScreen() {
       const sound = await AsyncStorage.getItem('soundEnabled');
       const music = await AsyncStorage.getItem('musicEnabled');
       const notifications = await AsyncStorage.getItem('notificationsEnabled');
+      const ms = await AsyncStorage.getItem('marketSpeed');
+      const cv = await AsyncStorage.getItem('coinVolatility');
+      const ai = await AsyncStorage.getItem('competitorAI');
+      const emoji = await AsyncStorage.getItem('emojiMode');
       if (sound !== null) setSoundEnabled(sound === 'true');
       if (music !== null) setMusicEnabled(music === 'true');
       if (notifications !== null) setNotificationsEnabled(notifications === 'true');
+      if (ms === 'Normal' || ms === 'Fast' || ms === 'Slow') setMarketSpeed(ms);
+      if (cv === 'Low' || cv === 'Medium' || cv === 'High') setCoinVolatility(cv);
+      if (ai === 'Low' || ai === 'Medium' || ai === 'High') setCompetitorAI(ai);
+      if (emoji !== null) setEmojiMode(emoji === 'true');
     };
     loadSettings();
   }, []);
@@ -45,6 +58,11 @@ export default function SettingsScreen() {
 
   const toggleSetting = async (key: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
+    await AsyncStorage.setItem(key, value.toString());
+  };
+
+  // Helper to persist gameplay settings
+  const persistSetting = async (key: string, value: string | boolean) => {
     await AsyncStorage.setItem(key, value.toString());
   };
 
@@ -106,69 +124,83 @@ export default function SettingsScreen() {
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>Gameplay Settings</Text>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => {
+              const next =
+                marketSpeed === 'Normal'
+                  ? 'Fast'
+                  : marketSpeed === 'Fast'
+                  ? 'Slow'
+                  : 'Normal';
+              setMarketSpeed(next);
+              persistSetting('marketSpeed', next);
+            }}
+          >
             <View style={styles.settingLeft}>
               <RefreshCw size={20} color={Colors.neutral[600]} />
               <Text style={styles.settingLabel}>Market Speed</Text>
             </View>
-            <Text style={styles.settingValue}>Normal</Text>
+            <Text style={styles.settingValue}>{marketSpeed}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => {
+              const next =
+                coinVolatility === 'Low'
+                  ? 'Medium'
+                  : coinVolatility === 'Medium'
+                  ? 'High'
+                  : 'Low';
+              setCoinVolatility(next);
+              persistSetting('coinVolatility', next);
+            }}
+          >
             <View style={styles.settingLeft}>
               <TrendingUp size={20} color={Colors.neutral[600]} />
               <Text style={styles.settingLabel}>Coin Volatility</Text>
             </View>
-            <Text style={styles.settingValue}>Medium</Text>
+            <Text style={styles.settingValue}>{coinVolatility}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => {
+              const next =
+                competitorAI === 'Low'
+                  ? 'Medium'
+                  : competitorAI === 'Medium'
+                  ? 'High'
+                  : 'Low';
+              setCompetitorAI(next);
+              persistSetting('competitorAI', next);
+            }}
+          >
             <View style={styles.settingLeft}>
               <Users size={20} color={Colors.neutral[600]} />
               <Text style={styles.settingLabel}>Competitor AI</Text>
             </View>
-            <Text style={styles.settingValue}>Medium</Text>
+            <Text style={styles.settingValue}>{competitorAI}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => {
+              setEmojiMode(!emojiMode);
+              persistSetting('emojiMode', !emojiMode);
+            }}
+          >
             <View style={styles.settingLeft}>
               <Smile size={20} color={Colors.neutral[600]} />
               <Text style={styles.settingLabel}>Emoji Mode</Text>
             </View>
-            <Text style={styles.settingValue}>On</Text>
+            <Text style={styles.settingValue}>{emojiMode ? 'On' : 'Off'}</Text>
           </TouchableOpacity>
         </View>
         
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>Account</Text>
-
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => {
-              setEditingField('profile');
-              setTempInputValue(profileName);
-            }}
-          >
-            <View style={styles.settingLeft}>
-              <Users size={20} color={Colors.neutral[600]} />
-              <Text style={styles.settingLabel}>Profile Name</Text>
-            </View>
-            <Text style={styles.settingValue}>{profileName || 'Edit'}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => {
-              setEditingField('company');
-              setTempInputValue(companyName);
-            }}
-          >
-            <View style={styles.settingLeft}>
-              <TrendingUp size={20} color={Colors.neutral[600]} />
-              <Text style={styles.settingLabel}>Company Name</Text>
-            </View>
-            <Text style={styles.settingValue}>{companyName || 'Edit'}</Text>
-          </TouchableOpacity>
           
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
@@ -216,7 +248,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
+          <Text style={styles.versionText}>Version 1.2.0</Text>
         </View>
       </ScrollView>
 
@@ -281,56 +313,6 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      <Modal
-        visible={editingField !== null}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setEditingField(null)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingField === 'profile' ? 'Edit Profile Name' : 'Edit Company Name'}
-              </Text>
-              <TouchableOpacity onPress={() => setEditingField(null)} style={styles.closeButton}>
-                <X size={24} color={Colors.neutral[600]} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalScroll}>
-              <View style={styles.tutorialSection}>
-                <Text style={styles.settingLabel}>Enter New Name</Text>
-                <TextInput
-                  style={[styles.settingValue, {
-                    borderColor: Colors.neutral[300],
-                    borderWidth: 1,
-                    padding: 10,
-                    borderRadius: 8,
-                    marginTop: 8,
-                  }]}
-                  placeholder="Type here..."
-                  value={tempInputValue}
-                  onChangeText={setTempInputValue}
-                />
-              </View>
-            </ScrollView>
-            <GameButton
-              title="Save"
-              onPress={async () => {
-                if (editingField === 'profile') {
-                  setProfileName(tempInputValue);
-                  await AsyncStorage.setItem('profileName', tempInputValue);
-                } else if (editingField === 'company') {
-                  setCompanyName(tempInputValue);
-                  await AsyncStorage.setItem('companyName', tempInputValue);
-                }
-                setEditingField(null);
-              }}
-              style={styles.closeModalButton}
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

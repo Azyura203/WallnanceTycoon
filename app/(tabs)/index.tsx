@@ -166,6 +166,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: Layout.spacing.xl,
     gap: Layout.spacing.md,
+    flexWrap: 'wrap',
   },
   statCard: {
     flex: 1,
@@ -222,7 +223,8 @@ const styles = StyleSheet.create({
   },
   dashboardButton: {
     flex: 1,
-    minWidth: 150,
+    minWidth: 140,
+    flexBasis: '48%',
     backgroundColor: Colors.card,
     borderRadius: Layout.borderRadius.md,
     padding: Layout.spacing.md,
@@ -238,12 +240,16 @@ const styles = StyleSheet.create({
   },
   cardRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: Layout.spacing.lg,
     gap: Layout.spacing.md,
+    flexWrap: 'wrap',
+    rowGap: Layout.spacing.md,
   },
   miniCard: {
     flex: 1,
+    minWidth: 160,
+    flexBasis: '48%',
     backgroundColor: Colors.card,
     borderRadius: Layout.borderRadius.md,
     padding: Layout.spacing.sm,

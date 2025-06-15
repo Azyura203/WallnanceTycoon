@@ -92,6 +92,10 @@ export default function MarketScreen() {
   const marketPrices = useMarketPrices();
   const companyShares = useCompanyShares();
 
+  // Responsive: get width and isWide at the top
+  const { width } = useWindowDimensions();
+  const isWide = width >= 600;
+
 
   const handleCoinPress = (coin: Coin) => {
     setSelectedCoin(coin);
@@ -231,14 +235,14 @@ export default function MarketScreen() {
               </View>
 
               {/* Price Column */}
-              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
                 <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[800] }}>
                   ${coin.price.toFixed(2)}
                 </Text>
               </View>
 
               {/* 24h Change Column */}
-              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
                 <Animated.Text style={{
                   fontFamily: 'Nunito-Bold',
                   fontSize: 14,
@@ -250,14 +254,14 @@ export default function MarketScreen() {
               </View>
 
               {/* Volume Column */}
-              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
                 <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 13, color: Colors.neutral[600] }}>
                   Volume: ${(coin.price * 10000).toLocaleString()}
                 </Text>
               </View>
 
               {/* Chart Column */}
-              <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
                 <SparkLine points={history} positive={coin.change >= 0} />
               </View>
             </>
@@ -422,20 +426,27 @@ export default function MarketScreen() {
                   {Object.entries(categories).map(([category, coins]) => (
                     <View key={category} style={{ marginBottom: Layout.spacing.xl }}>
                       <Text style={styles.sectionTitle}>{category} Tokens</Text>
-                  {/* Header row for coin list - full width aligned with cards */}
-                  <View style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingHorizontal: Layout.spacing.lg,
-                    marginBottom: 4,
-                  }}>
-                    <Text style={{ flex: 2, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Name</Text>
-                    <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
-                    <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
-                    <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
-                    <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Chart</Text>
-                  </View>
+                      {/* Header row for coin list - responsive */}
+                      {isWide ? (
+                        <View style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          paddingHorizontal: Layout.spacing.lg,
+                          marginBottom: 4,
+                        }}>
+                          <Text style={{ flex: 2, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Name</Text>
+                          <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
+                          <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
+                          <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
+                          <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Chart</Text>
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Layout.spacing.lg, marginBottom: 4 }}>
+                          <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Tokens</Text>
+                          <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Market</Text>
+                        </View>
+                      )}
                       <View style={styles.coinList}>
                         {coins
                           .sort((a, b) => b.price - a.price)
@@ -460,20 +471,27 @@ export default function MarketScreen() {
 
             <View style={{ marginTop: Layout.spacing.xl }}>
               <Text style={styles.sectionTitle}>🏢 Company Shares</Text>
-              {/* Header row for company shares - full width aligned with cards */}
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingHorizontal: Layout.spacing.lg,
-                marginBottom: 4,
-              }}>
-                <Text style={{ flex: 2, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Name</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Chart</Text>
-              </View>
+              {/* Header row for company shares - responsive */}
+              {isWide ? (
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingHorizontal: Layout.spacing.lg,
+                  marginBottom: 4,
+                }}>
+                  <Text style={{ flex: 2, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Name</Text>
+                  <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
+                  <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
+                  <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
+                  <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Chart</Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Layout.spacing.lg, marginBottom: 4 }}>
+                  <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Tokens</Text>
+                  <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Market</Text>
+                </View>
+              )}
               <View style={styles.coinList}>
                 {companyShares.map((share) => (
                   <CoinCard
@@ -620,19 +638,26 @@ export default function MarketScreen() {
         onRequestClose={() => setShowWLCModal(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>🌟 Wallnance Coin (WLC)</Text>
-            <Text style={styles.subtitle}>
-              Total Supply: 5,000,000 WLC
+          <View style={styles.wlcModalContent}>
+            <Text style={styles.modalTitle}>🚀 Wallnance Coin (WLC)</Text>
+            <Text style={styles.modalSubtitle}>Version 1.0 • June 2025</Text>
+            <Text style={styles.modalDescription}>
+              🪙 <Text style={{ fontWeight: 'bold' }}>WLC (Wallnance Coin)</Text> is the official digital currency of Wallnance Tycoon — designed to power in-game transactions and reward strategic players.
             </Text>
-            <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: Colors.neutral[700], marginVertical: 8 }}>
-              WLC is the official currency of Wallnance. Holders unlock premium features and can use it to subscribe to exclusive in-game packages.
+            <Text style={styles.modalDescription}>
+              🔒 <Text style={{ fontWeight: 'bold' }}>Fixed Supply:</Text> 5,000,000 WLC — non-mintable and deflationary, with burn mechanisms applied on premium purchases and upgrades.
             </Text>
-            <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: Colors.neutral[700], marginBottom: 16 }}>
-              🎁 Early Access Bonus: All early access players receive 1,000 WLC.
+            <Text style={styles.modalDescription}>
+              🎁 <Text style={{ fontWeight: 'bold' }}>Distribution:</Text> 70% Player Rewards • 20% Game Treasury • 10% Developer Reserve.
             </Text>
-            <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: Colors.neutral[700], marginBottom: 16 }}>
-              🛡️ Holders receive perks and privileges including airdrops, access to premium analytics, and discounted game items.
+            <Text style={styles.modalDescription}>
+              🧠 <Text style={{ fontWeight: 'bold' }}>Utility:</Text> WLC can be used to access premium features, unlock game expansions, and participate in exclusive events and community governance.
+            </Text>
+            <Text style={styles.modalDescription}>
+              🚀 <Text style={{ fontWeight: 'bold' }}>Early Access Bonus:</Text> Players who join early receive 1,000 WLC to kickstart their journey.
+            </Text>
+            <Text style={styles.modalDescription}>
+              🏗️ <Text style={{ fontWeight: 'bold' }}>Built by KANEDEV</Text> — Empowering gamers with true economic simulation.
             </Text>
             <GameButton
               title="Close"
@@ -739,6 +764,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    rowGap: 10,
   },
   coinCardNarrow: {
     flexDirection: 'column',
@@ -892,10 +919,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   modalTitle: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 22,
-    color: Colors.neutral[900],
-  },
+  fontFamily: 'Nunito-Bold',
+  fontSize: 22,
+  color: '#f8fafc', // brighter for visibility
+  textAlign: 'center',
+},
   modalPrice: {
     fontFamily: 'Nunito-Bold',
     fontSize: 24,
@@ -1006,5 +1034,42 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: Colors.primary[600],
     marginBottom: Layout.spacing.md,
+  },
+  // --- Futuristic WLC Modal Styles ---
+  wlcModalContent: {
+    // Gradient background workaround for RN: use two overlays for subtle effect
+    backgroundColor: '#16213e', // fallback
+    borderRadius: Layout.borderRadius.lg,
+    width: '90%',
+    padding: Layout.spacing.xl,
+    gap: Layout.spacing.md,
+    borderWidth: 1.5,
+    borderColor: '#38bdf8',
+    // Glowing border effect
+    shadowColor: '#38bdf8',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    // Simulate gradient with extra overlay via RN LinearGradient if available
+    // Otherwise, dark blue fallback
+    backgroundImage: undefined, // for web
+    // For native, gradient would be via react-native-linear-gradient if available
+  },
+  modalSubtitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: Layout.spacing.sm,
+    letterSpacing: 0.4,
+  },
+  modalDescription: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: '#e2e8f0',
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: Layout.spacing.sm,
+    letterSpacing: 0.1,
   },
 });
