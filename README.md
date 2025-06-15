@@ -1,28 +1,24 @@
-
+[wlc_whitepaper.md](https://github.com/user-attachments/files/20747117/wlc_whitepaper.md)
 ![image](https://github.com/user-attachments/assets/9a7cda6a-1c5a-4377-bdc1-d9951c85d524)
 
 
+💸 Wallnance Tycoon 📈
 
-# 💸 Wallnance Tycoon 📈
+Wallnance Tycoon is a real-time crypto trading simulation game built with React Native and Expo. Trade fun fictional tokens, track your portfolio, manage risk, and flex your market instincts in a beautifully designed mobile-first experience. Think Binance meets meme culture… with better UI and less FOMO. 🐸💰📉
 
-**Wallnance Tycoon** is a real-time, market simulation tycoon built with **Expo** and **React Native**. Trade meme coins, invest in fictional shares, survive volatile market news, and build your empire like a true digital CEO. Think Wall Street meets meme culture... with pixel bosses. 🐸📉🚀
+⸻
 
----
-
-## ✨ Features
-
-- 📊 **Live Market** – Meme coins & company shares with real-time price shifts
-- 🗞️ **Dynamic Market News** – News events impact coin/share prices automatically
-- 💸 **Simple Earn & Dual Investment** – Simulate passive income and time-based yield
-- 🏢 **Company Profiles** – Create your brand and watch it grow
-- 👤 **Player Portfolio** – Track assets, performance, and net worth
-- 👨‍👩‍👧‍👦 **Team Management** – Build your squad of pixel-style influencers
-- ⌛ **Real-Time Play Counter** – Tracks your grind time like a boss
-- 💾 **Auto Save System** – Save your progress locally after every major action
-- 🔐 **Login / Logout Support** – Resume where you left off
-- 🤖 **AI & Bot Traders** – Challenge evolving competitors (coming soon)
-- 🎁 **In-Game Rewards** – Redeem for real perks (voucher system coming...)
-
+🚀 Core Features
+	•	🪙 Real-Time Market – Live token prices with 1-min updates via API
+	•	📈 Portfolio Tracking – View performance, net worth, and distribution
+	•	📊 Dynamic Charts – Line & pie charts with smooth animations
+	•	🧠 Performance Badges – Auto-graded tokens by daily/weekly P&L
+	•	💼 WLC Integration – In-game utility token with real whitepaper
+	•	👾 AI/Bot Traders – Compete against evolving market bots
+	•	🎨 Sleek UI – Modern design, responsive layout, mobile-ready
+	•	🧾 Market Overview Dashboard – Gainers, volumes, live stats
+	•	🔐 Login / Auto Save – Resume where you left off
+	•	🛠️ Modular Codebase – Easy to extend and customize
 ---
 
 ## 🛠 Setup & Installation
@@ -36,33 +32,32 @@ npx expo start
 - Make sure you’re using the correct React & Expo versions.
 - Enable live reload and debug using Expo Go on your mobile device.
 ```
-⚠️ Requirements:
+🔧 Requirements
 	•	Node.js & npm
-	•	Expo CLI installed globally (npm install -g expo-cli)
-	•	React Native 0.79.3, Expo SDK 53+
-	•	Expo Go (iOS/Android) to test on device
+	•	React Native + Expo SDK 53+
+	•	Expo Go (iOS/Android)
+	•	Internet for market API
 
-🔥 Gameplay Highlights
-	•	🪙 Trade Freely: Buy & sell fun coins like CryTofu, Dogemi, EgoCash, and PokieShares
-	•	💥 React to News: Market reacts to in-game events every few seconds
-	•	📉 Price Simulation: Assets change in value based on news, demand, and randomness
-	•	📈 Grow Your Wealth: Invest, take risks, and strategize your way to millions
-	•	🎓 Learn While Playing: Financial simulation made fun and addictive
+💡 Gameplay Highlights
+	•	📉 Buy & Sell Memecoins – CrypTofu, SoyETH, BitRice and more
+	•	🔄 Simulated Trading – API + logic = realistic price movement
+	•	📆 24H / 30D P&L Analysis – Just like real exchanges
+	•	🧠 Learn Finance – Risk-free way to understand markets
+	•	🪙 WLC Tokenomics – Our own in-game stablecoin (Whitepaper included)
+
+📄 View [wlc_whitepaper.md] 
+
+
+🖥️ File Structure
 /project
 │
-├── app/                  # Screens & UI
-├── lib/                  # Custom hooks (useMarketPrices, useNews, etc.)
-├── components/           # UI components (Card, Buttons, Icons)
-├── store/                # Zustand state management
-├── assets/               # Icons, images
-└── utils/                # Helper functions and logic
-
-🧪 Coming Soon
-	•	🌍 Multiplayer mode – Real-time tycoon battles
-	•	🎟️ Voucher Redemption – Earn real-world discounts
-	•	🧠 AI Player Simulation – Watch bots trade smarter
-	•	🎨 Customizable Dashboard – Gothic, Minimalist, Retro, etc.
-	•	🧾 Finance Reports – Weekly profit/loss summaries
+├── app/              # Screens & pages
+├── components/       # UI components (modals, cards, charts)
+├── lib/              # Custom logic (hooks, API, helpers)
+├── store/            # Zustand global state
+├── utils/            # Formatters, calculators
+├── assets/           # Icons, fonts, images
+├── docs/             # Whitepaper & documentation
 
 ⸻
 
@@ -83,19 +78,31 @@ Set Base directory = ./
 Build command = npm run build:web
 Publish directory = dist
 
-🙌 Contributing
+🎯 Roadmap
+	•	📱 Trading Pairs Support
+	•	👥 Multiplayer / Player Rankings
+	•	🧾 Weekly Finance Reports
+	•	🎨 Custom Themes (Gothic / Minimal)
+	•	🧠 Advanced AI Bot Traders
+	•	🎁 Real Perks for WLC Holders
 
-We love:
-	•	Feature suggestions 🧠
-	•	UI improvement ideas 🎨
-	•	Cool new coin names 💡
- 
+⸻
+
+👷 Contributing
+
+We’d love your help!
+	•	💬 Suggest features
+	•	🎨 Improve UI
+	•	🪙 Add hilarious new coins
+
+⸻
+
 👑 Creator’s Note
 
-Wallnance Tycoon is more than a game — it’s a fun way to learn finance, invest smartly, and explore the market without risk.
+Wallnance Tycoon isn’t just a game — it’s a gateway to learning financial literacy in a fun, addictive, and gamified way.
 
-Start Poor. Stay Smart. Get Rich. 💼🔥
-— Built with ❤️ by Kane (KANEDEV)
+“Start poor. Stay smart. Get rich.”
+— Kane, Founder of KANEDEV
 
  📷 Screenshots
 
