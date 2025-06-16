@@ -1,49 +1,20 @@
 console.log("Loading: app/(tabs)/index.tsx");
-// Helper to format money values
-const formatMoney = (num: number): string => {
-  if (num >= 1e12) return `$${(num / 1e12).toFixed(1)}T`;
-  if (num >= 1e9) return `$${(num / 1e9).toFixed(1)}B`;
-  if (num >= 1e6) return `$${(num / 1e6).toFixed(1)}M`;
-  if (num >= 1e3) return `$${(num / 1e3).toFixed(1)}K`;
-  return `$${num.toFixed(2)}`;
-};
 
-import { View, Text, StyleSheet, ScrollView, Pressable, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { LineChart as LineChart, TrendingUp, Users, Newspaper } from 'lucide-react-native';
+import { LineChart as LineChart, Users } from 'lucide-react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import { useCompanyName } from '@/src/hooks/useCompanyName';
 import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
 import { useMarketPrices } from '@/src/hooks/market/useMarketPrices';
 
-const MiniCard = ({ title, items }: any) => (
-  <View style={styles.miniCard}>
-    <Text style={styles.miniCardTitle}>{title}</Text>
-    {items.map((coin: any) => (
-      <View key={coin.name} style={styles.miniRow}>
-        <Text style={{ flex: 1 }}>{coin.emoji} {coin.name}</Text>
-        <Text style={{ width: 80, textAlign: 'right' }}>
-          ${coin.price.toFixed(2)} 
-        </Text>
-        <Text style={{
-          width: 60,
-          textAlign: 'right',
-          color: coin.change >= 0 ? Colors.success[600] : Colors.error[600],
-        }}>
-          {coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%
-        </Text>
-      </View>
-    ))}
-  </View>
-);
-
-const DashboardButton = ({ icon: Icon, label, onPress }: any) => (
-  <Pressable style={styles.dashboardButton} onPress={onPress}>
-    <Icon size={24} color={Colors.primary[600]} />
-    <Text style={styles.buttonLabel}>{label}</Text>
-  </Pressable>
-);
+// Update the path below to the correct location of number.ts or number.js
+// Update the path below to the correct location of number.ts or number.js
+import { formatMoney } from '@/utils/number';
+// import MiniCard from '@/src/components/dashboard/MiniCard';
+import MiniCard from '../../src/components/dashboard/MiniCard';
+import DashboardButton from '@/src/components/dashboard/DashboardButton';
 
 export default function DashboardScreen() {
   const { companyName } = useCompanyName();
@@ -221,23 +192,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Layout.spacing.md,
   },
-  dashboardButton: {
-    flex: 1,
-    minWidth: 140,
-    flexBasis: '48%',
-    backgroundColor: Colors.card,
-    borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.md,
-    alignItems: 'center',
-    gap: Layout.spacing.sm,
-    ...Layout.shadows.small,
-  },
-  buttonLabel: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 14,
-    color: Colors.primary[700],
-    textAlign: 'center',
-  },
   cardRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -245,26 +199,5 @@ const styles = StyleSheet.create({
     gap: Layout.spacing.md,
     flexWrap: 'wrap',
     rowGap: Layout.spacing.md,
-  },
-  miniCard: {
-    flex: 1,
-    minWidth: 160,
-    flexBasis: '48%',
-    backgroundColor: Colors.card,
-    borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.sm,
-    ...Layout.shadows.small,
-  },
-  miniCardTitle: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 14,
-    color: Colors.primary[700],
-    marginBottom: 4,
-  },
-  miniRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 2,
   },
 });
