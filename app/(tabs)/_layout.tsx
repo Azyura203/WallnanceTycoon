@@ -2,12 +2,12 @@ console.log("Loading: app/(tabs)/_layout.tsx");
 
 import { Tabs } from 'expo-router';
 import { StyleSheet, View, Text, useWindowDimensions } from 'react-native';
-import Colors from '@/constants/Colors';
+import Colors from '@/src/constants/Colors';
 import { Chrome as Home, TrendingUp, Users, Trophy, Settings } from 'lucide-react-native';
-import { useTimeTracking } from '@/hooks/useTimeTracking';
+import { useTimeTracking } from '@/src/hooks/system/useTimeTracking';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { usePlayerFinances } from '@/hooks/usePlayerFinances';
+import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
 
 export default function TabLayout() {
   const { lastVisit } = useTimeTracking();

@@ -2,9 +2,9 @@ console.log("Loading: app/index.tsx");
 
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { useCompanyName } from '@/hooks/useCompanyName';
+import { useCompanyName } from '@/src/hooks/useCompanyName';
 import { View, Text, StyleSheet } from 'react-native';
-import Colors from '@/constants/Colors';
+import Colors from '@/src/constants/Colors';
 
 export default function IndexPage() {
   const { companyName, isLoading, error } = useCompanyName();

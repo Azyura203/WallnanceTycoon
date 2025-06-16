@@ -11,11 +11,11 @@ const formatMoney = (num: number): string => {
 import { View, Text, StyleSheet, ScrollView, Pressable, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { LineChart as LineChart, TrendingUp, Users, Newspaper } from 'lucide-react-native';
-import Colors from '@/constants/Colors';
-import Layout from '@/constants/Layout';
-import { useCompanyName } from '@/hooks/useCompanyName';
-import { usePlayerFinances } from '@/hooks/usePlayerFinances';
-import { useMarketPrices } from '@/hooks/useMarketPrices';
+import Colors from '@/src/constants/Colors';
+import Layout from '@/src/constants/Layout';
+import { useCompanyName } from '@/src/hooks/useCompanyName';
+import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
+import { useMarketPrices } from '@/src/hooks/market/useMarketPrices';
 
 const MiniCard = ({ title, items }: any) => (
   <View style={styles.miniCard}>

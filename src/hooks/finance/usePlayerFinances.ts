@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { useMarketPrices, getMarketItemByName } from './useMarketPrices';
+import { useMarketPrices, getMarketItemByName } from '../market/useMarketPrices';
 import { saveGameData } from '@/utils/saveGame';
 const BALANCE_KEY = '@wallnance_balance';
 const PORTFOLIO_KEY = '@wallnance_portfolio';

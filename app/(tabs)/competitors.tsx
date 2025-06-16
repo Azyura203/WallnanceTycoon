@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import SparkLine from '@/components/SparkLine';
-import Colors from '@/constants/Colors';
-import Layout from '@/constants/Layout';
+import SparkLine from '@/src/components/charts/SparkLine';
+import Colors from '@/src/constants/Colors';
+import Layout from '@/src/constants/Layout';
 
 interface TradingPair {
   pair: string;

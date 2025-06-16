@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Newspaper } from 'lucide-react-native';
-import SparkLine from '@/components/SparkLine';
-import Colors from '@/constants/Colors';
-import Layout from '@/constants/Layout';
-import GameButton from '@/components/GameButton';
-import { useMarketNews } from '@/hooks/useMarketNews';
-import { usePlayerFinances } from '@/hooks/usePlayerFinances';
+import SparkLine from '@/src/components/charts/SparkLine';
+import Colors from '@/src/constants/Colors';
+import Layout from '@/src/constants/Layout';
+import GameButton from '@/src/components/buttons/GameButton';
+import { useMarketNews } from '@/src/hooks/market/useMarketNews';
+import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
 import { saveGameData } from '@/utils/saveGame';
-import { useMarketPrices } from '@/hooks/useMarketPrices';
-import { useCompanyShares } from '@/hooks/useCompanyShares';
+import { useMarketPrices } from '@/src/hooks/market/useMarketPrices';
+import { useCompanyShares } from '@/src/hooks/useCompanyShares';
 
 interface Coin {
   id: string;

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
-import Colors from '@/constants/Colors';
-import Layout from '@/constants/Layout';
+import Colors from '@/src/constants/Colors';
+import Layout from '@/src/constants/Layout';
 import { Settings as SettingsIcon, Volume2, Music, Bell, RefreshCw, Shield, FileText, BookOpen, X, TrendingUp, Users, Smile } from 'lucide-react-native';
-import GameButton from '@/components/GameButton';
+import GameButton from '@/src/components/buttons/GameButton';
 import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {

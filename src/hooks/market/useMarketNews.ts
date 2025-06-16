@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTimeTracking } from './useTimeTracking';
+import { useTimeTracking } from '../system/useTimeTracking';
 
 export interface NewsItem {
   id: string;

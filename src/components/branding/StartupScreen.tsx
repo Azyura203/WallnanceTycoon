@@ -11,11 +11,11 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { router } from 'expo-router';
-import Colors from '@/constants/Colors';
-import Layout from '@/constants/Layout';
+import Colors from '../../constants/Colors';
+import Layout from '../../constants/Layout';
 import GameLogo from './GameLogo';
-import GameButton from './GameButton';
-import { useCompanyName } from '@/hooks/useCompanyName';
+import GameButton from '../buttons/GameButton';
+import { useCompanyName } from '../../hooks/useCompanyName';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PLAYER_NAMES_KEY = '@wallnance_player_names';

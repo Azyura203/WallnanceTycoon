@@ -9,8 +9,8 @@ import {
   Animated,
   Pressable
 } from 'react-native';
-import Colors from '@/constants/Colors';
-import Layout from '@/constants/Layout';
+import Colors from '../../constants/Colors';
+import Layout from '../../constants/Layout';
 
 interface GameButtonProps {
   title: string;

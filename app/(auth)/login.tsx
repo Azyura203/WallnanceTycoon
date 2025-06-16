@@ -1,6 +1,6 @@
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
-import Colors from '@/constants/Colors';
-import StartupScreen from '@/components/StartupScreen';
+import Colors from '@/src/constants/Colors';
+import StartupScreen from '@/src/components/branding/StartupScreen';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from 'react';
