@@ -23,3 +23,9 @@
 - Trading pair logic
 - AI bots or player competition
 - Leaderboard, rewards, and advanced tokenomics
+
+## [1.3.0] - 2025-06-16
+### Changed
+- Refactored entire project structure under `src/`
+- Added alias paths for cleaner imports
+- Grouped components, hooks, and assets by domain
