@@ -52,3 +52,7 @@
 ### 🧹 Cleaned
 - Removed legacy ID fallback logic from CoinCard
 - Tidied up redundant ticker fallbacks and conditionals
+
+## [v1.4.1] - 2025-06-21
+### Changed
+- Removed SparkLine chart display from market view for cleaner UI and layout testing.
