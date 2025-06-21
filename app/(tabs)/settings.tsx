@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 export default function SettingsScreen() {
   const router = useRouter();
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  // v1.5.0 Feature Flags and Settings Enhancements
 
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(true);
@@ -55,6 +56,16 @@ export default function SettingsScreen() {
     };
     loadUserData();
   }, []);
+
+  // Save profileName to AsyncStorage when changed
+  useEffect(() => {
+    AsyncStorage.setItem('profileName', profileName);
+  }, [profileName]);
+
+  // Save companyName to AsyncStorage when changed
+  useEffect(() => {
+    AsyncStorage.setItem('companyName', companyName);
+  }, [companyName]);
 
   const toggleSetting = async (key: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
@@ -201,7 +212,35 @@ export default function SettingsScreen() {
         
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>Account</Text>
-          
+
+          {/* Editable Profile Name */}
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => {
+              setEditingField('profile');
+              setTempInputValue(profileName);
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingLabel}>Profile Name</Text>
+            </View>
+            <Text style={styles.settingValue}>{profileName || 'Set name'}</Text>
+          </TouchableOpacity>
+
+          {/* Editable Company Name */}
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => {
+              setEditingField('company');
+              setTempInputValue(companyName);
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingLabel}>Company Name</Text>
+            </View>
+            <Text style={styles.settingValue}>{companyName || 'Set company'}</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <RefreshCw size={20} color={Colors.neutral[600]} />
@@ -209,7 +248,7 @@ export default function SettingsScreen() {
             </View>
             <SettingsIcon size={20} color={Colors.neutral[500]} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <Shield size={20} color={Colors.neutral[600]} />
@@ -217,7 +256,7 @@ export default function SettingsScreen() {
             </View>
             <SettingsIcon size={20} color={Colors.neutral[500]} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <FileText size={20} color={Colors.neutral[600]} />
@@ -248,9 +287,45 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Version 1.2.0</Text>
+          <Text style={styles.versionText}>Version 1.5.0</Text>
         </View>
       </ScrollView>
+
+      {/* Modal for editing profile/company name */}
+      <Modal
+        visible={editingField !== null}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setEditingField(null)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {editingField === 'profile' ? 'Edit Profile Name' : 'Edit Company Name'}
+            </Text>
+            <TextInput
+              value={tempInputValue}
+              onChangeText={setTempInputValue}
+              style={{
+                backgroundColor: '#fff',
+                padding: 12,
+                borderRadius: 8,
+                fontSize: 16,
+                marginTop: 12,
+                marginBottom: 20,
+              }}
+            />
+            <GameButton
+              title="Save"
+              onPress={() => {
+                if (editingField === 'profile') setProfileName(tempInputValue);
+                if (editingField === 'company') setCompanyName(tempInputValue);
+                setEditingField(null);
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showHowToPlay}

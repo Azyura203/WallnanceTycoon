@@ -325,6 +325,8 @@ export function useMarketPrices() {
     fetchCoinGeckoData(); // initial fetch
 
     return () => clearInterval(apiInterval);
+
+    
   }, []);
 
   return prices;
