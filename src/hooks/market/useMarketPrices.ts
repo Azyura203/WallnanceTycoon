@@ -4,14 +4,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMarketNews } from './useMarketNews';
 
 type MarketItem = {
+  total_volume: number | 100000;
+  current_price: number;
   category: string;
-  id: Key | null | undefined;
+  id: Key | null | 100000;
   emoji: string;
   name: string;
   ticker: string;
   price: number;
   change: number;
   direction: 'up' | 'down' | 'same';
+  high24h?: number;
+  low24h?: number;
+  volume24h?: number;
+  priceChangePercentage24h?: number;
 };
 
 const getRandomChange = () => {
@@ -19,129 +25,191 @@ const getRandomChange = () => {
   return parseFloat(change.toFixed(2));
 };
 
+const defaultPrices: MarketItem[] = [
+  {
+    id: '1',
+    emoji: '🍣',
+    name: 'CrypTofu',
+    ticker: 'CTF',
+    price: 1200,
+    change: 0,
+    direction: 'same',
+    category: 'Meme',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '2',
+    emoji: '🌱',
+    name: 'SoyETH',
+    ticker: 'SETH',
+    price: 10000,
+    change: 0,
+    direction: 'same',
+    category: 'Layer1',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '3',
+    emoji: '🍚',
+    name: 'BitRice',
+    ticker: 'BRC',
+    price: 20000,
+    change: 0,
+    direction: 'same',
+    category: 'Meta',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '4',
+    emoji: '🐶',
+    name: 'DogeBean',
+    ticker: 'DBN',
+    price: 300,
+    change: 0,
+    direction: 'same',
+    category: 'Meme',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '5',
+    emoji: '🧋',
+    name: 'BobaCoin',
+    ticker: 'BBC',
+    price: 1300,
+    change: 0,
+    direction: 'same',
+    category: 'Stable',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '6',
+    emoji: '😺',
+    name: 'NyanCash',
+    ticker: 'NYC',
+    price: 5400,
+    change: 0,
+    direction: 'same',
+    category: 'Meme',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '7',
+    emoji: '🦄',
+    name: 'UniYen',
+    ticker: 'UYN',
+    price: 2000,
+    change: 0,
+    direction: 'same',
+    category: 'Utility',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '8',
+    emoji: '🥩',
+    name: 'StakeToken',
+    ticker: 'STK',
+    price: 420,
+    change: 0,
+    direction: 'same',
+    category: 'Utility',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '9',
+    emoji: '🧠',
+    name: 'MindCoin',
+    ticker: 'MND',
+    price: 1111,
+    change: 0,
+    direction: 'same',
+    category: 'Meta',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '10',
+    emoji: '🧻',
+    name: 'ToiletPaper',
+    ticker: 'TPT',
+    price: 69,
+    change: 0,
+    direction: 'same',
+    category: 'Meme',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '11',
+    emoji: '👻',
+    name: 'BooBux',
+    ticker: 'BOO',
+    price: 777,
+    change: 0,
+    direction: 'same',
+    category: 'Meta',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '12',
+    emoji: '🍕',
+    name: 'PizzaFi',
+    ticker: 'PZF',
+    price: 999,
+    change: 0,
+    direction: 'same',
+    category: 'Utility',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '13',
+    emoji: '🥷',
+    name: 'NinjaSwap',
+    ticker: 'NJS',
+    price: 880,
+    change: 0,
+    direction: 'same',
+    category: 'DEX',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '14',
+    emoji: '🛸',
+    name: 'AlienFi',
+    ticker: 'AFI',
+    price: 421,
+    change: 0,
+    direction: 'same',
+    category: 'Meme',
+    total_volume: 100000,
+    current_price: 0
+  },
+  {
+    id: '15',
+    emoji: '🎮',
+    name: 'PlayVerse',
+    ticker: 'PLV',
+    price: 350,
+    change: 0,
+    direction: 'same',
+    category: 'GameFi',
+    total_volume: 100000,
+    current_price: 0
+  }
+];
+
 export function useMarketPrices() {
-  const [prices, setPrices] = useState<MarketItem[]>([
-    {
-      id: '1',
-      emoji: '🍣',
-      name: 'CrypTofu',
-      ticker: 'CTF',
-      price: 1200,
-      change: 0,
-      direction: 'same',
-      category: 'Meme',
-    },
-    {
-      id: '2',
-      emoji: '🌱',
-      name: 'SoyETH',
-      ticker: 'SETH',
-      price: 10000,
-      change: 0,
-      direction: 'same',
-      category: 'Layer1',
-    },
-    {
-      id: '3',
-      emoji: '🍚',
-      name: 'BitRice',
-      ticker: 'BRC',
-      price: 20000,
-      change: 0,
-      direction: 'same',
-      category: 'Meta',
-    },
-    {
-      id: '4',
-      emoji: '🐶',
-      name: 'DogeBean',
-      ticker: 'DBN',
-      price: 300,
-      change: 0,
-      direction: 'same',
-      category: 'Meme',
-    },
-    {
-      id: '5',
-      emoji: '🧋',
-      name: 'BobaCoin',
-      ticker: 'BBC',
-      price: 1300,
-      change: 0,
-      direction: 'same',
-      category: 'Stable',
-    },
-    {
-      id: '6',
-      emoji: '😺',
-      name: 'NyanCash',
-      ticker: 'NYC',
-      price: 5400,
-      change: 0,
-      direction: 'same',
-      category: 'Meme',
-    },
-    {
-      id: '7',
-      emoji: '🦄',
-      name: 'UniYen',
-      ticker: 'UYN',
-      price: 2000,
-      change: 0,
-      direction: 'same',
-      category: 'Utility',
-    },
-    {
-      id: '8',
-      emoji: '🥩',
-      name: 'StakeToken',
-      ticker: 'STK',
-      price: 420,
-      change: 0,
-      direction: 'same',
-      category: 'Utility',
-    },
-    {
-      id: '9',
-      emoji: '🧠',
-      name: 'MindCoin',
-      ticker: 'MND',
-      price: 1111,
-      change: 0,
-      direction: 'same',
-      category: 'Meta',
-    },
-    {
-      id: '10',
-      emoji: '🧻',
-      name: 'ToiletPaper',
-      ticker: 'TPT',
-      price: 69,
-      change: 0,
-      direction: 'same',
-      category: 'Meme',
-    },
-    {
-      id: '11',
-      emoji: '👻',
-      name: 'BooBux',
-      ticker: 'BOO',
-      price: 777,
-      change: 0,
-      direction: 'same',
-      category: 'Meta',
-    },
-    {
-      id: '12',
-      emoji: '🍕',
-      name: 'PizzaFi',
-      ticker: 'PZF',
-      price: 999,
-      change: 0,
-      direction: 'same',
-      category: 'Utility',
-    }
-  ]);
+  const [prices, setPrices] = useState<MarketItem[]>(defaultPrices);
 
   const { getActiveImpacts } = useMarketNews();
 
@@ -153,8 +221,16 @@ export function useMarketPrices() {
         const saved = await AsyncStorage.getItem('market_prices');
         if (saved) {
           const parsed = JSON.parse(saved);
-          setPrices(parsed);
-          currentPrices = parsed;
+          const merged = [...parsed];
+
+          defaultPrices.forEach(defToken => {
+            if (!parsed.find((p: MarketItem) => p.id === defToken.id)) {
+              merged.push(defToken);
+            }
+          });
+
+          setPrices(merged);
+          currentPrices = merged;
         }
       } catch {
         // fallback to existing prices state
@@ -200,30 +276,36 @@ export function useMarketPrices() {
           'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,dogecoin'
         );
         const data = await response.json();
-        const priceMap: Record<string, number> = {
-          bitcoin: data.find((d: any) => d.id === 'bitcoin')?.current_price || 0,
-          ethereum: data.find((d: any) => d.id === 'ethereum')?.current_price || 0,
-          dogecoin: data.find((d: any) => d.id === 'dogecoin')?.current_price || 0,
+        const priceMap: Record<string, any> = {
+          bitcoin: data.find((d: any) => d.id === 'bitcoin') || null,
+          ethereum: data.find((d: any) => d.id === 'ethereum') || null,
+          dogecoin: data.find((d: any) => d.id === 'dogecoin') || null,
         };
 
         setPrices((prev) => {
           const updated = prev.map((item) => {
-            let realPrice = item.price;
-            if (item.name === 'CrypTofu') realPrice = priceMap.dogecoin;
-            if (item.name === 'SoyETH') realPrice = priceMap.ethereum;
-            if (item.name === 'BitRice') realPrice = priceMap.bitcoin;
-
             if (['CrypTofu', 'SoyETH', 'BitRice'].includes(item.name)) {
-              const change = parseFloat((realPrice - item.price).toFixed(2));
+              const realData =
+                item.name === 'CrypTofu' ? priceMap.dogecoin :
+                item.name === 'SoyETH' ? priceMap.ethereum :
+                item.name === 'BitRice' ? priceMap.bitcoin : null;
+
+              if (!realData) return item;
+
+              const change = parseFloat((realData.current_price - item.price).toFixed(2));
               let direction: 'up' | 'down' | 'same' = 'same';
               if (change > 0) direction = 'up';
               else if (change < 0) direction = 'down';
 
               return {
                 ...item,
-                price: parseFloat(realPrice.toFixed(2)),
+                price: parseFloat(realData.current_price.toFixed(2)),
                 change,
                 direction,
+                high24h: realData.high_24h,
+                low24h: realData.low_24h,
+                volume24h: realData.total_volume,
+                priceChangePercentage24h: realData.price_change_percentage_24h,
               };
             }
             return item;
@@ -248,6 +330,7 @@ export function useMarketPrices() {
   return prices;
 }
 
-export function getMarketItemByName(prices: MarketItem[], name: string): MarketItem | undefined {
-  return prices.find(item => item.name === name);
+export function getMarketItemByName(prices: MarketItem[], name: string): MarketItem | 100000 {
+  const found = prices.find(item => item.name === name);
+  return found !== undefined ? found : 100000;
 }

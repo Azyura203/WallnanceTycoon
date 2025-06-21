@@ -17,6 +17,13 @@ interface Coin {
   price: number;
   change: number;
   ticker: string; // Use string for ticker symbol
+  // Optional extra fields for modal/details
+  current_price?: number;
+  high_24h?: number;
+  low_24h?: number;
+  total_volume?: number;
+  price_change_percentage_24h?: number;
+  category?: string;
 }
 
 const calculateTotalPurchaseValue = (price: number, quantity: number): number => {
@@ -80,6 +87,7 @@ const CoinFlipAnimation = ({ visible }: { visible: boolean }) => {
 };
 
 export default function MarketScreen()  {
+  // For legacy modal (trade modal)
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [activeTab, setActiveTab] = useState<'trading' | 'news' | 'stocks'>('trading');
@@ -181,6 +189,7 @@ export default function MarketScreen()  {
     }
   };
 
+
   const CoinCard = ({ coin, index }: { coin: Coin, index: number }) => {
     const { width } = useWindowDimensions();
     const isWide = width >= 600;
@@ -198,10 +207,16 @@ export default function MarketScreen()  {
 
     // Responsive layout for wide vs. narrow screens
     // No dynamic background color based on price or change; use fixed Colors.card
+    // Wrap the row with a press handler for modal
     return (
       <View>
         <Pressable
-          onPress={() => handleCoinPress(coin)}
+          // Open legacy trade modal directly
+          onPress={() => {
+            setSelectedCoin(coin);
+            setQuantity('1');
+            setError(null);
+          }}
           style={[
             styles.coinCardBase,
             isWide ? styles.coinCardWide : styles.coinCardNarrow,
@@ -430,7 +445,8 @@ export default function MarketScreen()  {
 
             {/* Category tab selector */}
             {(() => {
-              const categories = ['All', 'Meme', 'Stable', 'Utility', 'Meta', 'Layer1'];
+              // Ensure categories include new types such as DEX and GameFi
+              const categories = ['All', 'Meme', 'Stable', 'Utility', 'Meta', 'Layer1', 'DEX', 'GameFi'];
               return (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 12, paddingHorizontal: 16 }}>
                   {categories.map(category => (
@@ -476,30 +492,47 @@ export default function MarketScreen()  {
             ) : (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Layout.spacing.lg, marginBottom: 4 }}>
                 <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Tokens</Text>
-                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Market</Text>
+                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Market Cap</Text>
               </View>
             )}
             
             <View style={styles.coinList}>
-              
-              {marketPrices
-                .filter(coin => selectedCategory === 'All' || coin.category === selectedCategory)
-                .sort((a, b) => b.price - a.price)
-                .map((coin, idx) => (
-                  
-                  <CoinCard
-                    key={coin.id}
-                    coin={{
-                      id: String(coin.id ?? ''),
-                      name: coin.name,
-                      emoji: coin.emoji ?? '🪙',
-                      price: coin.price,
-                      change: coin.change,
-                      ticker: coin.ticker ?? coin.id ?? '', // fallback to id if ticker missing
-                    }}
-                    index={idx}
-                  />
-                ))}
+              {(() => {
+                // Filter tokens by category, but do not exclude new tokens missing a category
+                const filteredTokens = marketPrices.filter(
+                  coin =>
+                    selectedCategory === 'All' ||
+                    (coin.category === selectedCategory)
+                );
+                // Log filtered tokens for debugging
+                console.log(
+                  'Filtered Tokens:',
+                  filteredTokens
+                );
+                return filteredTokens
+                  .sort((a, b) => b.price - a.price)
+                  .map((coin, idx) => (
+                    <CoinCard
+                      key={coin.id}
+                      coin={{
+                        id: String(coin.id ?? ''),
+                        name: coin.name,
+                        emoji: coin.emoji ?? '🪙',
+                        price: coin.price,
+                        change: coin.change,
+                        ticker: coin.ticker ?? coin.id ?? '', // fallback to id if ticker missing
+                        // Add extra fields for modal if available
+                        current_price: coin.current_price ?? coin.price,
+                        high_24h: coin.high24h,
+                        low_24h: coin.low24h,
+                        total_volume: coin.total_volume,
+                        price_change_percentage_24h:
+                          coin.priceChangePercentage24h ?? coin.change,
+                      }}
+                      index={idx}
+                    />
+                  ));
+              })()}
             </View>
             
           </View>
@@ -537,29 +570,45 @@ export default function MarketScreen()  {
             ) : (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Layout.spacing.lg, marginBottom: 4 }}>
                 <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Tokens</Text>
-                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Market</Text>
+                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Market Cap</Text>
               </View>
             )}
             <View style={styles.coinList}>
-              {companyShares.map((share, idx) => (
-                <CoinCard
-                  key={share.id}
-                  coin={{
-                    id: String(share.id ?? ''),
-                    name: share.name,
-                    ticker: share.ticker ?? '', // Add ticker property, fallback to empty string if undefined
-                    emoji: share.emoji ?? '🏢',
-                    price: share.price,
-                    change: share.change,
-                  }}
-                  index={idx}
-                />
-              ))}
+              {companyShares && companyShares.length > 0 ? (
+                companyShares.map((share, idx) => (
+                  <CoinCard
+                    key={share.id}
+                    coin={{
+                      id: String(share.id ?? ''),
+                      name: share.name,
+                      ticker: share.ticker ?? '',
+                      emoji: share.emoji ?? '🏢',
+                      price: share.price,
+                      change: share.change,
+                      current_price: share.current_price ?? share.price,
+                      high_24h: share.high24h,
+                      low_24h: share.low24h,
+                      total_volume: share.total_volume,
+                      price_change_percentage_24h: share.priceChangePercentage24h ?? share.change,
+                    }}
+                    index={idx}
+                  />
+                ))
+              ) : companyShares ? (
+                <Text style={{ textAlign: 'center', color: Colors.neutral[500], marginTop: 12 }}>
+                  No stock data available.
+                </Text>
+              ) : (
+                <Text style={{ textAlign: 'center', color: Colors.neutral[400], marginTop: 12 }}>
+                  Loading stock data...
+                </Text>
+              )}
             </View>
           </View>
         )}
       </ScrollView>
 
+      {/* Legacy trade modal (keep for buy/sell) */}
       <Modal
         visible={!!selectedCoin}
         animationType="slide"
@@ -569,33 +618,162 @@ export default function MarketScreen()  {
         {selectedCoin && (
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  {selectedCoin.emoji} {selectedCoin.name}
-                </Text>
-                <Text style={styles.modalPrice}>
+              {/* Token Header: Icon, Name, Symbol */}
+              <View style={{ alignItems: 'center', marginBottom: 6 }}>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 2,
+                }}>
+                  <Text style={{ fontSize: 32 }}>{selectedCoin.emoji || '🪙'}</Text>
+                  <Text style={{
+                    fontFamily: 'Nunito-Bold',
+                    fontSize: 22,
+                    color: Colors.primary[700],
+                    marginLeft: 2,
+                  }}>
+                    {selectedCoin.name}
+                  </Text>
+                  <Text style={{
+                    fontFamily: 'Nunito-SemiBold',
+                    fontSize: 16,
+                    color: Colors.neutral[600],
+                    marginLeft: 6,
+                  }}>
+                    ({selectedCoin.ticker ? selectedCoin.ticker.toUpperCase() : ''})
+                  </Text>
+                </View>
+              </View>
+              {/* Card-like Stats: price, 24h high/low, volume, change, chart */}
+              <View style={{
+                backgroundColor: Colors.neutral[50],
+                borderRadius: 14,
+                padding: 16,
+                marginBottom: 18,
+                borderWidth: 1,
+                borderColor: Colors.neutral[200],
+                ...Layout.shadows.small,
+                alignItems: 'center',
+              }}>
+                {/* Current Price */}
+                <Text style={{
+                  fontFamily: 'Nunito-Bold',
+                  fontSize: 26,
+                  color: Colors.primary[500],
+                  marginBottom: 6,
+                  textAlign: 'center'
+                }}>
                   ${selectedCoin.price.toFixed(2)}
                 </Text>
+                {/* 24h High/Low */}
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 4,
+                  gap: 22,
+                }}>
+                  <View>
+                    <Text style={{
+                      fontFamily: 'Nunito-Regular',
+                      fontSize: 13,
+                      color: Colors.neutral[700],
+                      textAlign: 'center',
+                    }}>
+                      24h High
+                    </Text>
+                    <Text style={{
+                      fontFamily: 'Nunito-Bold',
+                      fontSize: 15,
+                      color: Colors.success[600],
+                      textAlign: 'center',
+                    }}>
+                      {selectedCoin.high_24h !== undefined ? `$${selectedCoin.high_24h}` : 'N/A'}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text style={{
+                      fontFamily: 'Nunito-Regular',
+                      fontSize: 13,
+                      color: Colors.neutral[700],
+                      textAlign: 'center',
+                    }}>
+                      24h Low
+                    </Text>
+                    <Text style={{
+                      fontFamily: 'Nunito-Bold',
+                      fontSize: 15,
+                      color: Colors.error[600],
+                      textAlign: 'center',
+                    }}>
+                      {selectedCoin.low_24h !== undefined ? `$${selectedCoin.low_24h}` : 'N/A'}
+                    </Text>
+                  </View>
+                </View>
+                {/* 24h Volume & Change */}
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: 22,
+                  marginBottom: 6,
+                }}>
+                  <View>
+                    <Text style={{
+                      fontFamily: 'Nunito-Regular',
+                      fontSize: 13,
+                      color: Colors.neutral[700],
+                      textAlign: 'center',
+                    }}>
+                      24h Volume
+                    </Text>
+                    <Text style={{
+                      fontFamily: 'Nunito-Bold',
+                      fontSize: 15,
+                      color: Colors.primary[700],
+                      textAlign: 'center',
+                    }}>
+                      {selectedCoin.total_volume !== undefined ? selectedCoin.total_volume.toLocaleString() : 'N/A'}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text style={{
+                      fontFamily: 'Nunito-Regular',
+                      fontSize: 13,
+                      color: Colors.neutral[700],
+                      textAlign: 'center',
+                    }}>
+                      24h Change
+                    </Text>
+                    <Text style={{
+                      fontFamily: 'Nunito-Bold',
+                      fontSize: 15,
+                      color: selectedCoin.change >= 0 ? Colors.success[600] : Colors.error[600],
+                      textAlign: 'center',
+                    }}>
+                      {selectedCoin.change >= 0 ? '+' : ''}{selectedCoin.change}%
+                    </Text>
+                  </View>
+                </View>
+                {/* Chart Placeholder */}
+                <View style={{
+                  width: '100%',
+                  height: 60,
+                  marginTop: 8,
+                  marginBottom: 2,
+                  backgroundColor: Colors.neutral[100],
+                  borderRadius: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Text style={{ color: Colors.neutral[400], fontSize: 13, fontFamily: 'Nunito-Regular' }}>
+                    {/* Replace with chart in future */}
+                    [Chart coming soon]
+                  </Text>
+                </View>
               </View>
-
-              <View style={styles.portfolioInfo}>
-                <Text style={styles.portfolioLabel}>Your Portfolio</Text>
-                <Text style={styles.portfolioValue}>
-                  {getPortfolioQuantity(selectedCoin.name)} assets
-                </Text>
-              </View>
-              {/* 24h Change summary */}
-              <View style={{ marginTop: 8 }}>
-                <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 13, textAlign: 'center', color: Colors.neutral[600] }}>
-                  24h Change: {selectedCoin.change >= 0 ? '+' : ''}{selectedCoin.change}%
-                </Text>
-              </View>
-
-              <View style={styles.balanceContainer}>
-                <Text style={styles.balanceLabel}>💰 Your Balance</Text>
-                <Text style={styles.balanceValue}>{formatMoney(balance)}</Text>
-              </View>
-
+              {/* Quantity input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Quantity</Text>
                 <TextInput
@@ -611,11 +789,10 @@ export default function MarketScreen()  {
                   </Text>
                 )}
               </View>
-
               {error && (
                 <Text style={styles.errorText}>{error}</Text>
               )}
-
+              {/* Buy/Sell Button Row */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
                 <TouchableOpacity
                   style={{
@@ -652,21 +829,81 @@ export default function MarketScreen()  {
                   <Text style={{ color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 16, textAlign: 'center' }}>📉 Sell</Text>
                 </TouchableOpacity>
               </View>
-
+              {/* Portfolio, Balance, Last Update summary row */}
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: 18,
+                marginBottom: 2,
+                backgroundColor: Colors.neutral[50],
+                borderRadius: 10,
+                paddingVertical: 10,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: Colors.neutral[200],
+                gap: 6,
+              }}>
+                <View style={{ flex: 1, alignItems: 'center' }}>
+                  <Text style={{
+                    fontFamily: 'Nunito-Regular',
+                    fontSize: 13,
+                    color: Colors.neutral[600]
+                  }}>
+                    Portfolio Holdings
+                  </Text>
+                  <Text style={{
+                    fontFamily: 'Nunito-Bold',
+                    fontSize: 15,
+                    color: Colors.primary[700]
+                  }}>
+                    {getPortfolioQuantity(selectedCoin.name)}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, alignItems: 'center' }}>
+                  <Text style={{
+                    fontFamily: 'Nunito-Regular',
+                    fontSize: 13,
+                    color: Colors.neutral[600]
+                  }}>
+                    Your Balance
+                  </Text>
+                  <Text style={{
+                    fontFamily: 'Nunito-Bold',
+                    fontSize: 15,
+                    color: Colors.primary[700]
+                  }}>
+                    {formatMoney(balance)}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, alignItems: 'center' }}>
+                  <Text style={{
+                    fontFamily: 'Nunito-Regular',
+                    fontSize: 13,
+                    color: Colors.neutral[600]
+                  }}>
+                    Last Update
+                  </Text>
+                  <Text style={{
+                    fontFamily: 'Nunito-Bold',
+                    fontSize: 13,
+                    color: Colors.neutral[500]
+                  }}>
+                    {new Date().toLocaleTimeString()}
+                  </Text>
+                </View>
+              </View>
               <GameButton
                 title="Cancel"
                 onPress={() => setSelectedCoin(null)}
                 style={styles.cancelButton}
                 textStyle={styles.cancelButtonText}
               />
-              {/* Last Updated timestamp */}
-              <Text style={{ fontSize: 12, textAlign: 'center', color: Colors.neutral[500] }}>
-                Last Updated: {new Date().toLocaleTimeString()}
-              </Text>
             </View>
           </View>
         )}
       </Modal>
+
 
       {/* WLC Info Modal */}
       <Modal

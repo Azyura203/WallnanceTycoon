@@ -28,6 +28,17 @@ export default function DashboardScreen() {
       .sort((a, b) => desc ? b[key] - a[key] : a[key] - b[key])
       .slice(0, n);
 
+  const generateDummyNews = () => {
+    const newsItems = [
+      "BitRice rumored to launch new feature",
+      "SoyETH hits new volume milestone",
+      "NyanCash trending on social media",
+      "CrypTofu gets listed on NewExchange",
+      "StakeToken announces new staking program"
+    ];
+    return newsItems[Math.floor(Math.random() * newsItems.length)];
+  };
+
   if (!tokens || tokens.length === 0) {
     return (
       <View style={styles.container}>
@@ -86,6 +97,13 @@ export default function DashboardScreen() {
            topVolume[0] && typeof topVolume[0].volume === 'number'
             ? `${topGainers[0].name} ${topGainers[0].change >= 0 ? 'up' : 'down'} ${Math.abs(topGainers[0].change).toFixed(1)}% · ${topVolume[0].name} vol $${topVolume[0].volume.toLocaleString()}`
             : '📉 Market data loading...'}
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📢 News & Events</Text>
+        <Text style={styles.marketPreviewSubtitle}>
+          BitRice rumored to launch new feature • SoyETH hits new volume milestone • NyanCash trending on social media
         </Text>
       </View>
 

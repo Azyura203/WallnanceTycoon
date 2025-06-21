@@ -148,7 +148,7 @@ export function usePlayerFinances() {
 
   const buyFromMarket = async (name: string, quantity: number) => {
     const marketItem = getMarketItemByName(prices, name);
-    if (!marketItem) {
+    if (!marketItem || typeof marketItem !== 'object' || marketItem.price === undefined) {
       throw new Error(`Asset "${name}" not found in market`);
     }
 
