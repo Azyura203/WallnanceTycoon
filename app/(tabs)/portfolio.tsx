@@ -43,10 +43,10 @@ export default function PortfolioScreen() {
   const enrichedPortfolio = Object.entries(portfolio).map(([name, entry]) => {
     const marketItem = [...prices, ...shares].find(p => p.name === name);
     const currentPrice = marketItem?.price ?? entry.avgPrice;
-
-    const totalValue = currentPrice * entry.quantity;
     const totalCost = entry.avgPrice * entry.quantity;
+    const totalValue = currentPrice * entry.quantity;
     const gainLoss = totalValue - totalCost;
+    const roi = totalCost === 0 ? 0 : (gainLoss / totalCost) * 100;
 
     return {
       id: name,
@@ -56,12 +56,15 @@ export default function PortfolioScreen() {
       avgPrice: entry.avgPrice,
       currentPrice,
       totalValue,
+      totalCost,
       gainLoss,
+      roi,
     };
   });
 
   const todayPL = enrichedPortfolio.reduce((acc, coin) => {
-    const dailyChange = coin.currentPrice * 0.02; // simulate a 2% move for today
+    const yesterdayPrice = coin.currentPrice / 1.02; // assuming 2% increase today
+    const dailyChange = coin.currentPrice - yesterdayPrice;
     return acc + dailyChange * coin.quantity;
   }, 0);
 
@@ -493,3 +496,14 @@ buttonContainer: {
     color: Colors.neutral[500],
   },
 });
+function getPortfolioStats() {
+  // This function is not actually used for calculation in the current code,
+  // but let's return some aggregate stats for the portfolio.
+  // You can expand this as needed.
+  return {
+    totalValue: 0,
+    totalCost: 0,
+    totalGainLoss: 0,
+    roi: 0,
+  };
+}
