@@ -92,11 +92,29 @@ export function usePortfolio() {
     await savePortfolio(updated);
   };
 
+  const getPortfolioStats = () => {
+    return portfolio.map(asset => {
+      const totalCost = asset.buyPrice * asset.amount;
+      const currentValue = asset.currentPrice * asset.amount;
+      const pnl = currentValue - totalCost;
+      const roi = totalCost > 0 ? (pnl / totalCost) * 100 : 0;
+
+      return {
+        ...asset,
+        totalCost,
+        currentValue,
+        pnl,
+        roi,
+      };
+    });
+  };
+
   return {
     portfolio,
     isLoading,
     addAsset,
     sellAsset,
     updatePrice,
+    getPortfolioStats,
   };
 }

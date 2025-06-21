@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Newspaper } from 'lucide-react-native';
-import SparkLine from '@/src/components/charts/SparkLine';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import GameButton from '@/src/components/buttons/GameButton';
@@ -109,7 +108,13 @@ export default function MarketScreen()  {
   const handleTrade = async (type: 'buy' | 'sell') => {
     if (!selectedCoin) return;
 
-    const amount = parseInt(quantity, 10);
+    const inputQuantity = quantity;
+    const amount = parseFloat(inputQuantity);
+    // Limit to 8 decimal places
+    if (inputQuantity.includes('.') && inputQuantity.split('.')[1].length > 8) {
+      alert("Too many decimal places (max 8)");
+      return;
+    }
     if (isNaN(amount) || amount <= 0) {
       setError('Please enter a valid quantity');
       return;
@@ -248,17 +253,17 @@ export default function MarketScreen()  {
                 </Text>
               </View>
 
-              {/* Volume Column */}
+             {/* Volume Column */}
               <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
-                <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 13, color: Colors.neutral[600] }}>
-                  Volume: ${(coin.price * 10000).toLocaleString()}
-                </Text>
+                <View style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
+                  {/*<Text style={{ fontSize: 11, color: '#aaa' }}>Volume</Text>*/}
+                  <Text style={{ fontWeight: '600', fontSize: 13 }}>
+                    {(coin.price * 10000).toLocaleString()}
+                  </Text>
+                </View>
               </View>
 
-              {/* Chart Column */}
-              <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
-                <SparkLine points={history} positive={coin.change >= 0} />
-              </View>
+             
             </>
           ) : (
             <>
@@ -295,7 +300,7 @@ export default function MarketScreen()  {
                     fontSize: 13,
                     color: Colors.neutral[600],
                   }}>
-                    Volume: ${(coin.price * 10000).toLocaleString()}
+                    ${(coin.price * 10000).toLocaleString()}
                   </Text>
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -306,7 +311,6 @@ export default function MarketScreen()  {
                   }}>
                     {coin.change >= 0 ? '+' : ''}{coin.change}%
                   </Text>
-                  <SparkLine points={history} positive={coin.change >= 0} />
                 </View>
               </View>
             </>
@@ -468,7 +472,6 @@ export default function MarketScreen()  {
                 <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
                 <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
                 <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Chart</Text>
               </View>
             ) : (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Layout.spacing.lg, marginBottom: 4 }}>
@@ -530,7 +533,6 @@ export default function MarketScreen()  {
                 <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
                 <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
                 <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Chart</Text>
               </View>
             ) : (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Layout.spacing.lg, marginBottom: 4 }}>
@@ -603,9 +605,9 @@ export default function MarketScreen()  {
                   keyboardType="numeric"
                   placeholder="Enter amount"
                 />
-                {selectedCoin && quantity.trim() !== '' && !isNaN(Number(quantity)) && (
+                {selectedCoin && quantity.trim() !== '' && !isNaN(parseFloat(quantity)) && (
                   <Text style={styles.totalCostText}>
-                    Total Cost: {formatMoney(selectedCoin.price * Number(quantity))}
+                    Total Cost: {formatMoney(selectedCoin.price * parseFloat(quantity))}
                   </Text>
                 )}
               </View>

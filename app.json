@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
+    "name": "wallnance",
     "slug": "wallnance-tycoon-game",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kaneisnotyours.wallnancetycoongame",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "web": {
       "bundler": "metro",
@@ -30,6 +34,9 @@
         "projectId": "08f0d236-e514-4699-9a6b-5b3b2196b68b"
       }
     },
-    "owner": "kaneisnotyours"
+    "owner": "kaneisnotyours",
+    "android": {
+      "package": "com.kaneisnotyours.wallnancetycoongame"
+    }
   }
 }

@@ -9,12 +9,12 @@ import { useCompanyName } from '@/src/hooks/useCompanyName';
 import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
 import { useMarketPrices } from '@/src/hooks/market/useMarketPrices';
 
-// Update the path below to the correct location of number.ts or number.js
-// Update the path below to the correct location of number.ts or number.js
+// TODO: Ensure that '@/src/utils/number' exists and exports 'formatMoney'.
+// If the file does not exist, create 'src/utils/number.ts' and export 'formatMoney' from it.
 import { formatMoney } from '@/utils/number';
-// import MiniCard from '@/src/components/dashboard/MiniCard';
-import MiniCard from '../../src/components/dashboard/MiniCard';
+import MiniCard from '@/src/components/dashboard/MiniCard';
 import DashboardButton from '@/src/components/dashboard/DashboardButton';
+// import DashboardButton from '@/src/components/dashboard/DashboardButton';
 
 export default function DashboardScreen() {
   const { companyName } = useCompanyName();

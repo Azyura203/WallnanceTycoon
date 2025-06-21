@@ -1,5 +1,4 @@
-import React, { useRef, useEffect } from 'react';
-import { Animated } from 'react-native';
+import React from 'react';
 import Svg, { Path as SvgPath } from 'react-native-svg';
 
 interface Props {
@@ -7,40 +6,33 @@ interface Props {
   positive: boolean;         // price went up?
 }
 
-const AnimatedPath = Animated.createAnimatedComponent(SvgPath);
-
-export default function SparkLine({ points, positive }: Props) {
-  // animate the stroke‐dashoffset so the line “draws” itself
-  const dash = useRef(new Animated.Value(1000)).current;
-  useEffect(() => {
-    dash.setValue(1000);
-    Animated.timing(dash, {
-      toValue: 0,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  }, [points]);
-
+export default function SparkLine({ points }: Props) {
   // quick ‘poor-man’s’ normalisation into SVG coords 0-30
   const max = Math.max(...points);
   const min = Math.min(...points);
   const mapY = (v: number) =>
     30 - ((v - min) / Math.max(max - min || 1, 1)) * 30;
 
-  const d = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'}${i * 15},${mapY(p)}`)
-    .join(' ');
+  const segments = points.slice(1).map((point, i) => {
+    const x1 = i * 15;
+    const y1 = mapY(points[i]);
+    const x2 = (i + 1) * 15;
+    const y2 = mapY(point);
+    const color = point >= points[i] ? "#22c55e" : "#ef4444";
+    return { x1, y1, x2, y2, color };
+  });
 
   return (
     <Svg width={60} height={30}>
-      <AnimatedPath
-        d={d}
-        stroke={positive ? '#22c55e' : '#ef4444'}
-        strokeWidth={2}
-        fill="none"
-        strokeDasharray="1000"
-        strokeDashoffset={dash}
-      />
+      {segments.map((seg, index) => (
+        <SvgPath
+          key={index}
+          d={`M${seg.x1},${seg.y1} L${seg.x2},${seg.y2}`}
+          stroke={seg.color}
+          strokeWidth={2}
+          fill="none"
+        />
+      ))}
     </Svg>
   );
 }
