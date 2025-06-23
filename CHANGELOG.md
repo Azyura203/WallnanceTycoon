@@ -56,3 +56,27 @@
 ## [v1.4.1] - 2025-06-21
 ### Changed
 - Removed SparkLine chart display from market view for cleaner UI and layout testing.
+
+## [v1.5.0] - 2025-06-23
+
+### ✨ Added
+- AI Difficulty setting now works and saves properly.
+- Username display and edit modal integrated (uses existing companyName hook).
+- Clean new UI for username editing — borderless input, user icon, and modern modal style.
+- Owner and logo display in Competitor Market for more realism.
+
+### 🔧 Changed
+- Rewrote "How to Play" modal content to reflect individual player experience (not company-based).
+- Refactored input modals for compact, centered layouts with proper padding.
+- Updated Competitor Market UI: added price formatting, emoji logo support, and owner labels.
+
+### ❌ Removed
+- "Market Speed" and "Coin Volatility" settings (conflicted with real API logic).
+- "Emoji Mode" setting (no longer relevant).
+- "Company Name" concept — fully transitioned to individual user mode.
+
+### 🐛 Fixed
+- Layout spacing issues in settings and modal screens.
+- Full-screen modal rendering now scales better on various devices.
+
+---
