@@ -9,6 +9,8 @@ type TradingPair = {
   volume: number;
   change: number;
   price: number;
+  logo?: string;
+  owner?: string;
 };
 
 type TradingPairsListProps = {
@@ -21,11 +23,14 @@ function TradingPairsList({ pairs }: TradingPairsListProps) {
       {pairs.map((pair) => (
         <View key={pair.pair} style={styles.row}>
           <View style={styles.avatar}>
-            <Text style={[styles.avatarText, {color: Colors.primary[700]}]}>💹</Text>
+            <Text style={[styles.avatarText, { color: Colors.primary[700] }]}>
+              {pair.logo || '💹'}
+            </Text>
           </View>
           <View style={styles.info}>
             <Text style={styles.pair}>{pair.pair}</Text>
-            <Text style={styles.price}>${pair.price.toFixed(4)}</Text>
+            <Text style={styles.price}>${pair.price.toLocaleString(undefined, { minimumFractionDigits: pair.price < 1 ? 4 : 2 })}</Text>
+            {pair.owner && <Text style={styles.owner}>by {pair.owner}</Text>}
           </View>
           <View style={styles.stats}>
             <Text style={styles.volume}>Vol: {pair.volume}</Text>
@@ -122,6 +127,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Regular',
     fontSize: 12,
     color: Colors.neutral[500],
+  },
+  owner: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    color: Colors.neutral[400],
   },
   stats: {
     flex: 1,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useCompanyName } from '@/src/hooks/useCompanyName';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
 import Colors from '@/src/constants/Colors';
@@ -16,15 +17,9 @@ export default function SettingsScreen() {
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  const [marketSpeed, setMarketSpeed] = useState<'Normal' | 'Fast' | 'Slow'>('Normal');
-  const [coinVolatility, setCoinVolatility] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [competitorAI, setCompetitorAI] = useState<'Low' | 'Medium' | 'High'>('Medium');
-  const [emojiMode, setEmojiMode] = useState(true);
-
-  const [profileName, setProfileName] = useState('');
-  const [companyName, setCompanyName] = useState('');
-
-  const [editingField, setEditingField] = useState<'profile' | 'company' | null>(null);
+  const { companyName: username, setCompanyName: setUsername } = useCompanyName();
+  const [editingField, setEditingField] = useState<'profile' | null>(null);
   const [tempInputValue, setTempInputValue] = useState('');
 
   useEffect(() => {
@@ -32,40 +27,14 @@ export default function SettingsScreen() {
       const sound = await AsyncStorage.getItem('soundEnabled');
       const music = await AsyncStorage.getItem('musicEnabled');
       const notifications = await AsyncStorage.getItem('notificationsEnabled');
-      const ms = await AsyncStorage.getItem('marketSpeed');
-      const cv = await AsyncStorage.getItem('coinVolatility');
       const ai = await AsyncStorage.getItem('competitorAI');
-      const emoji = await AsyncStorage.getItem('emojiMode');
       if (sound !== null) setSoundEnabled(sound === 'true');
       if (music !== null) setMusicEnabled(music === 'true');
       if (notifications !== null) setNotificationsEnabled(notifications === 'true');
-      if (ms === 'Normal' || ms === 'Fast' || ms === 'Slow') setMarketSpeed(ms);
-      if (cv === 'Low' || cv === 'Medium' || cv === 'High') setCoinVolatility(cv);
       if (ai === 'Low' || ai === 'Medium' || ai === 'High') setCompetitorAI(ai);
-      if (emoji !== null) setEmojiMode(emoji === 'true');
     };
     loadSettings();
   }, []);
-
-  useEffect(() => {
-    const loadUserData = async () => {
-      const storedProfileName = await AsyncStorage.getItem('profileName');
-      const storedCompanyName = await AsyncStorage.getItem('companyName');
-      if (storedProfileName) setProfileName(storedProfileName);
-      if (storedCompanyName) setCompanyName(storedCompanyName);
-    };
-    loadUserData();
-  }, []);
-
-  // Save profileName to AsyncStorage when changed
-  useEffect(() => {
-    AsyncStorage.setItem('profileName', profileName);
-  }, [profileName]);
-
-  // Save companyName to AsyncStorage when changed
-  useEffect(() => {
-    AsyncStorage.setItem('companyName', companyName);
-  }, [companyName]);
 
   const toggleSetting = async (key: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
@@ -134,47 +103,6 @@ export default function SettingsScreen() {
 
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>Gameplay Settings</Text>
-
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => {
-              const next =
-                marketSpeed === 'Normal'
-                  ? 'Fast'
-                  : marketSpeed === 'Fast'
-                  ? 'Slow'
-                  : 'Normal';
-              setMarketSpeed(next);
-              persistSetting('marketSpeed', next);
-            }}
-          >
-            <View style={styles.settingLeft}>
-              <RefreshCw size={20} color={Colors.neutral[600]} />
-              <Text style={styles.settingLabel}>Market Speed</Text>
-            </View>
-            <Text style={styles.settingValue}>{marketSpeed}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => {
-              const next =
-                coinVolatility === 'Low'
-                  ? 'Medium'
-                  : coinVolatility === 'Medium'
-                  ? 'High'
-                  : 'Low';
-              setCoinVolatility(next);
-              persistSetting('coinVolatility', next);
-            }}
-          >
-            <View style={styles.settingLeft}>
-              <TrendingUp size={20} color={Colors.neutral[600]} />
-              <Text style={styles.settingLabel}>Coin Volatility</Text>
-            </View>
-            <Text style={styles.settingValue}>{coinVolatility}</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.settingItem}
             onPress={() => {
@@ -194,51 +122,23 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.settingValue}>{competitorAI}</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => {
-              setEmojiMode(!emojiMode);
-              persistSetting('emojiMode', !emojiMode);
-            }}
-          >
-            <View style={styles.settingLeft}>
-              <Smile size={20} color={Colors.neutral[600]} />
-              <Text style={styles.settingLabel}>Emoji Mode</Text>
-            </View>
-            <Text style={styles.settingValue}>{emojiMode ? 'On' : 'Off'}</Text>
-          </TouchableOpacity>
         </View>
         
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>Account</Text>
 
-          {/* Editable Profile Name */}
+          {/* Editable Username */}
           <TouchableOpacity
             style={styles.settingItem}
             onPress={() => {
               setEditingField('profile');
-              setTempInputValue(profileName);
+              setTempInputValue(username ?? '');
             }}
           >
             <View style={styles.settingLeft}>
-              <Text style={styles.settingLabel}>Profile Name</Text>
+              <Text style={styles.settingLabel}>Username</Text>
             </View>
-            <Text style={styles.settingValue}>{profileName || 'Set name'}</Text>
-          </TouchableOpacity>
-
-          {/* Editable Company Name */}
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => {
-              setEditingField('company');
-              setTempInputValue(companyName);
-            }}
-          >
-            <View style={styles.settingLeft}>
-              <Text style={styles.settingLabel}>Company Name</Text>
-            </View>
-            <Text style={styles.settingValue}>{companyName || 'Set company'}</Text>
+            <Text style={styles.settingValue}>{username || 'Set name'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem}>
@@ -272,10 +172,8 @@ export default function SettingsScreen() {
             style={styles.settingItem}
             onPress={async () => {
               await AsyncStorage.removeItem('profileName');
-             
               await AsyncStorage.removeItem('gameState');
-              setProfileName('');
-             
+              setUsername('');
               router.replace('/login');
             }}
           >
@@ -301,26 +199,45 @@ export default function SettingsScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              {editingField === 'profile' ? 'Edit Profile Name' : 'Edit Company Name'}
+              {editingField === 'profile' ? 'Edit Username' : ''}
             </Text>
-            <TextInput
-              value={tempInputValue}
-              onChangeText={setTempInputValue}
+            <View
               style={{
-                backgroundColor: '#fff',
-                padding: 12,
+                backgroundColor: Colors.neutral[100],
                 borderRadius: 8,
-                fontSize: 16,
-                marginTop: 12,
-                marginBottom: 20,
+                padding: 12,
+                marginTop: Layout.spacing.lg,      // was 8
+                marginBottom: Layout.spacing.lg,
+                width: '90%',
+                alignSelf: 'center',
               }}
-            />
+            >
+              <Users size={20} color={Colors.neutral[500]} style={{ alignSelf: 'center', marginBottom: 8 }} />
+              <TextInput
+                value={tempInputValue}
+                onChangeText={setTempInputValue}
+                placeholder="Enter your username"
+                placeholderTextColor={Colors.neutral[400]}
+                style={{
+                  fontSize: 16,
+                  color: Colors.neutral[800],
+                  textAlign: 'center',
+                  paddingVertical: 6,
+                }}
+              />
+            </View>
             <GameButton
               title="Save"
               onPress={() => {
-                if (editingField === 'profile') setProfileName(tempInputValue);
-                if (editingField === 'company') setCompanyName(tempInputValue);
+                if (editingField === 'profile') setUsername(tempInputValue);
                 setEditingField(null);
+              }}
+              style={{
+                marginTop: Layout.spacing.lg,  // was 6
+                paddingVertical: 10,
+                borderRadius: 6,
+                width: '100%',                // full width inside padded card
+                alignSelf: 'center',
               }}
             />
           </View>
@@ -334,7 +251,7 @@ export default function SettingsScreen() {
         onRequestClose={() => setShowHowToPlay(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={styles.howToPlayModalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>How To Play</Text>
               <TouchableOpacity 
@@ -349,8 +266,8 @@ export default function SettingsScreen() {
               <View style={styles.tutorialSection}>
                 <Text style={styles.tutorialTitle}>🚀 Getting Started</Text>
                 <Text style={styles.tutorialText}>
-                  Welcome to Wallnance Tycoon! Your goal is to build a successful meme coin company.
-                  Start by purchasing miners to generate coins, then expand your operations as you grow.
+                  Welcome to Wallnance Tycoon! Your goal is to become a top meme coin tycoon by trading, investing, and outsmarting AI competitors.
+                  Start by collecting coins, making smart decisions in the market, and growing your net worth.
                 </Text>
               </View>
 
@@ -365,8 +282,7 @@ export default function SettingsScreen() {
               <View style={styles.tutorialSection}>
                 <Text style={styles.tutorialTitle}>👥 Building Your Team</Text>
                 <Text style={styles.tutorialText}>
-                  Hire talented individuals to improve your operations. Developers increase mining efficiency,
-                  marketers boost coin value, and managers reduce costs.
+                  Compete against AI investors and evolve your strategy. Your decisions impact your performance — time your trades, react to news, and dominate the leaderboard.
                 </Text>
               </View>
 
@@ -501,8 +417,24 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: Colors.card,
     borderRadius: Layout.borderRadius.lg,
-    maxHeight: '80%',
+    maxHeight: '100%',
+    width: '90%',
+    maxWidth: 450,
+    alignSelf: 'center',
+    padding: Layout.spacing.lg,
     ...Layout.shadows.large,
+  },
+  howToPlayModalContent: {
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.md,
+    width: '95%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    paddingTop: Layout.spacing.xl,
+    paddingBottom: Layout.spacing.xl,
+    paddingHorizontal: Layout.spacing.lg,
+    maxHeight: '90%',
+    ...Layout.shadows.medium,
   },
   modalHeader: {
     flexDirection: 'row',
