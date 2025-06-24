@@ -2,6 +2,25 @@
 
 **Release Date:** 2025-06-16
 
+## [v1.6.0] - 2025-06-24
+
+### 🎉 Added
+- Brand new **Learn & Earn** screen replacing the old competitor system.
+- Three learning modes: **Trading**, **Investing**, and **Tokenomics**.
+- Fun and interactive real-time lesson modals for each topic.
+- Honorary tribute to **Satoshi Nakamoto** under "CRYPTO" section with custom content.
+- Tabs and layout styled with better responsiveness across all devices.
+- Buy modal now shows all relevant info: price, balance, owned quantity, and enforces $1 minimum.
+
+### 🎨 Improved
+- Fully reworked UI for the learning screen (formerly competitor screen).
+- Tab layout inspired by popular exchanges for a cleaner feel.
+- Modal width and padding optimized for small and large screens.
+
+### ❌ Removed
+- Entire Competitor Market screen and related data/cards.
+- Trading pair logic from previous versions to make way for a more unique system.
+
 ### ✨ Highlights
 - New dynamic **Dashboard/Overview page** (Binance-style)
 - Performance **badges** and **P&L tracking** (daily + 30 days)
