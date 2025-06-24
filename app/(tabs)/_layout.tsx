@@ -126,9 +126,9 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="competitors"
+          name="LearnAndEarn"
           options={{
-            title: 'Rankings',
+            title: 'Learn & Earn',
             tabBarIcon: ({ color, focused }) => (
               <View style={{
                 backgroundColor: focused ? Colors.primary[100] : 'transparent',
