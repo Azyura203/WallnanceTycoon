@@ -12,6 +12,8 @@ import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
 export default function TabLayout() {
   const { lastVisit } = useTimeTracking();
   const { balance } = usePlayerFinances();
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 400;
 
   const getDaysSinceLastVisit = () => {
     if (!lastVisit) return 0;
@@ -40,17 +42,15 @@ export default function TabLayout() {
     loadTotal();
   }, []);
 
-  // In-game time state and formatter
   const [ticks, setTicks] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTicks(prev => prev + 1); // 1 tick = 1 week
-    }, 5000); // every 5 seconds
+      setTicks(prev => prev + 1);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Returns the current in-game time for the player in Y/M/W format
   const getFormattedTime = () => {
     const weeks = (ticks % 4) + 1;
     const months = Math.floor(ticks / 4) % 12 + 1;
@@ -66,18 +66,18 @@ export default function TabLayout() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.playTimeOverlay}>
-        <Text style={styles.playTimeText}>
-          {getFormattedTime()} · {formatMoney(balance)} {/* Player Balance */}
+      <View style={[styles.playTimeOverlay, isSmallScreen && styles.playTimeOverlaySmall]}>
+        <Text style={[styles.playTimeText, isSmallScreen && styles.playTimeTextSmall]}>
+          {getFormattedTime()} · {formatMoney(balance)}
         </Text>
       </View>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors.primary[600],
           tabBarInactiveTintColor: Colors.neutral[400],
-          tabBarStyle: styles.tabBar,
-          tabBarLabelStyle: styles.tabBarLabel,
-          tabBarItemStyle: styles.tabBarItem,
+          tabBarStyle: [styles.tabBar, isSmallScreen && styles.tabBarSmall],
+          tabBarLabelStyle: [styles.tabBarLabel, isSmallScreen && styles.tabBarLabelSmall],
+          tabBarItemStyle: [styles.tabBarItem, isSmallScreen && styles.tabBarItemSmall],
           headerShown: false,
         }}>
         <Tabs.Screen
@@ -85,12 +85,12 @@ export default function TabLayout() {
           options={{
             title: 'Dashboard',
             tabBarIcon: ({ color, focused }) => (
-              <View style={{
-                backgroundColor: focused ? Colors.primary[100] : 'transparent',
-                borderRadius: 20,
-                padding: 8,
-              }}>
-                <Home color={color} size={24} />
+              <View style={[
+                styles.tabIconContainer,
+                focused && styles.tabIconContainerActive,
+                isSmallScreen && styles.tabIconContainerSmall
+              ]}>
+                <Home color={color} size={isSmallScreen ? 20 : 24} />
               </View>
             ),
           }}
@@ -100,12 +100,12 @@ export default function TabLayout() {
           options={{
             title: 'Market',
             tabBarIcon: ({ color, focused }) => (
-              <View style={{
-                backgroundColor: focused ? Colors.primary[100] : 'transparent',
-                borderRadius: 20,
-                padding: 8,
-              }}>
-                <TrendingUp color={color} size={24} />
+              <View style={[
+                styles.tabIconContainer,
+                focused && styles.tabIconContainerActive,
+                isSmallScreen && styles.tabIconContainerSmall
+              ]}>
+                <TrendingUp color={color} size={isSmallScreen ? 20 : 24} />
               </View>
             ),
           }}
@@ -115,12 +115,12 @@ export default function TabLayout() {
           options={{
             title: 'Portfolio',
             tabBarIcon: ({ color, focused }) => (
-              <View style={{
-                backgroundColor: focused ? Colors.primary[100] : 'transparent',
-                borderRadius: 20,
-                padding: 8,
-              }}>
-                <Users color={color} size={24} />
+              <View style={[
+                styles.tabIconContainer,
+                focused && styles.tabIconContainerActive,
+                isSmallScreen && styles.tabIconContainerSmall
+              ]}>
+                <Users color={color} size={isSmallScreen ? 20 : 24} />
               </View>
             ),
           }}
@@ -128,14 +128,14 @@ export default function TabLayout() {
         <Tabs.Screen
           name="LearnAndEarn"
           options={{
-            title: 'Learn & Earn',
+            title: isSmallScreen ? 'Learn' : 'Learn & Earn',
             tabBarIcon: ({ color, focused }) => (
-              <View style={{
-                backgroundColor: focused ? Colors.primary[100] : 'transparent',
-                borderRadius: 20,
-                padding: 8,
-              }}>
-                <Trophy color={color} size={24} />
+              <View style={[
+                styles.tabIconContainer,
+                focused && styles.tabIconContainerActive,
+                isSmallScreen && styles.tabIconContainerSmall
+              ]}>
+                <Trophy color={color} size={isSmallScreen ? 20 : 24} />
               </View>
             ),
           }}
@@ -145,12 +145,12 @@ export default function TabLayout() {
           options={{
             title: 'Settings',
             tabBarIcon: ({ color, focused }) => (
-              <View style={{
-                backgroundColor: focused ? Colors.primary[100] : 'transparent',
-                borderRadius: 20,
-                padding: 8,
-              }}>
-                <Settings color={color} size={24} />
+              <View style={[
+                styles.tabIconContainer,
+                focused && styles.tabIconContainerActive,
+                isSmallScreen && styles.tabIconContainerSmall
+              ]}>
+                <Settings color={color} size={isSmallScreen ? 20 : 24} />
               </View>
             ),
           }}
@@ -170,11 +170,20 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     justifyContent: 'space-around',
   },
+  tabBarSmall: {
+    height: 70,
+    paddingTop: 4,
+    paddingBottom: 2,
+  },
   tabBarLabel: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 12,
     marginTop: 2,
     marginBottom: 0,
+  },
+  tabBarLabelSmall: {
+    fontSize: 10,
+    marginTop: 1,
   },
   tabBarItem: {
     minHeight: 56,
@@ -182,25 +191,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tabBarItemSmall: {
+    minHeight: 48,
+    paddingVertical: 2,
+  },
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 20,
+    padding: 8,
   },
-  daysBadge: {
-    position: 'absolute',
-    top: -8,
-    right: -12,
-    backgroundColor: Colors.accent[500],
-    borderRadius: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    minWidth: 24,
-    alignItems: 'center',
+  tabIconContainerSmall: {
+    padding: 6,
+    borderRadius: 16,
   },
-  daysBadgeText: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 10,
-    color: 'white',
+  tabIconContainerActive: {
+    backgroundColor: Colors.primary[100],
   },
   playTimeOverlay: {
     position: 'absolute',
@@ -221,10 +227,21 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  playTimeOverlaySmall: {
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 8,
+  },
   playTimeText: {
     fontFamily: 'Nunito-Bold',
     fontSize: 14,
     color: 'white',
     textAlign: 'center',
+  },
+  playTimeTextSmall: {
+    fontSize: 12,
   },
 });

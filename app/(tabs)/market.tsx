@@ -16,8 +16,7 @@ interface Coin {
   emoji: string;
   price: number;
   change: number;
-  ticker: string; // Use string for ticker symbol
-  // Optional extra fields for modal/details
+  ticker: string;
   current_price?: number;
   high_24h?: number;
   low_24h?: number;
@@ -38,7 +37,6 @@ const formatMoney = (num: number): string => {
   return `$${num.toFixed(2)}`;
 };
 
-// CoinFlipAnimation component for trade confirmation
 const CoinFlipAnimation = ({ visible }: { visible: boolean }) => {
   const flipAnim = useRef(new Animated.Value(0)).current;
 
@@ -64,30 +62,22 @@ const CoinFlipAnimation = ({ visible }: { visible: boolean }) => {
   if (!visible) return null;
 
   return (
-    <View style={{ position: 'absolute', top: '40%', left: '45%', zIndex: 10 }}>
+    <View style={styles.coinFlipContainer}>
       <Animated.View
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          backgroundColor: Colors.primary[500],
-          justifyContent: 'center',
-          alignItems: 'center',
-          transform: [{ rotateY }],
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.2,
-          shadowRadius: 4,
-        }}
+        style={[
+          styles.coinFlipAnimation,
+          {
+            transform: [{ rotateY }],
+          }
+        ]}
       >
-        <Text style={{ fontSize: 28, color: 'white', fontWeight: 'bold' }}>W</Text>
+        <Text style={styles.coinFlipText}>W</Text>
       </Animated.View>
     </View>
   );
 };
 
-export default function MarketScreen()  {
-  // For legacy modal (trade modal)
+export default function MarketScreen() {
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [activeTab, setActiveTab] = useState<'trading' | 'news' | 'stocks'>('trading');
@@ -99,13 +89,10 @@ export default function MarketScreen()  {
   const { balance, portfolio, buyCoin, sellCoin } = usePlayerFinances();
 
   const marketPrices = useMarketPrices();
-  console.log("📊 marketPrices[0]:", marketPrices[0]);
   const companyShares = useCompanyShares();
-
-  // Responsive: get width and isWide at the top
   const { width } = useWindowDimensions();
-  const isWide = width >= 600;
-
+  const isSmallScreen = width < 400;
+  const isMediumScreen = width < 600;
 
   const handleCoinPress = (coin: Coin) => {
     setSelectedCoin(coin);
@@ -118,7 +105,6 @@ export default function MarketScreen()  {
 
     const inputQuantity = quantity;
     const amount = parseFloat(inputQuantity);
-    // Limit to 8 decimal places
     if (inputQuantity.includes('.') && inputQuantity.split('.')[1].length > 8) {
       alert("Too many decimal places (max 8)");
       return;
@@ -163,18 +149,6 @@ export default function MarketScreen()  {
     return 0;
   };
 
-  // Helper to calculate profit/loss for a coin in portfolio
-  const getProfitLoss = (coinName: string, currentPrice: number): number | null => {
-    const entry = portfolio[coinName];
-    if (!entry || typeof entry !== 'object' || !entry.avgPrice) return null;
-
-    const { avgPrice, quantity } = entry;
-    const currentValue = currentPrice * quantity;
-    const originalValue = avgPrice * quantity;
-
-    return currentValue - originalValue;
-  };
-
   const getTimeAgo = (timestamp: string | Date) => {
     const now = new Date();
     const diff = now.getTime() - new Date(timestamp).getTime();
@@ -189,14 +163,9 @@ export default function MarketScreen()  {
     }
   };
 
-
   const CoinCard = ({ coin, index }: { coin: Coin, index: number }) => {
-    const { width } = useWindowDimensions();
-    const isWide = width >= 600;
-
-
-    // Price history tracking for sparkline
     const [history, setHistory] = useState<number[]>([coin.price]);
+    
     useEffect(() => {
       setHistory((prev) => {
         const updated = [...prev, coin.price];
@@ -204,134 +173,87 @@ export default function MarketScreen()  {
       });
     }, [coin.price]);
 
-
-    // Responsive layout for wide vs. narrow screens
-    // No dynamic background color based on price or change; use fixed Colors.card
-    // Wrap the row with a press handler for modal
     return (
-      <View>
-        <Pressable
-          // Open legacy trade modal directly
-          onPress={() => {
-            setSelectedCoin(coin);
-            setQuantity('1');
-            setError(null);
-          }}
-          style={[
-            styles.coinCardBase,
-            isWide ? styles.coinCardWide : styles.coinCardNarrow,
-            { backgroundColor: Colors.card }
-          ]}
-        >
-          {isWide ? (
+      <Pressable
+        onPress={() => handleCoinPress(coin)}
+        style={[
+          styles.coinCard,
+          isSmallScreen && styles.coinCardSmall
+        ]}
+      >
+        <View style={[
+          styles.coinCardContent,
+          isSmallScreen ? styles.coinCardContentSmall : styles.coinCardContentLarge
+        ]}>
+          {/* Mobile Layout */}
+          {isSmallScreen ? (
             <>
-              {/* Name Column */}
-              <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', gap: Layout.spacing.sm }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: coin.change >= 0 ? Colors.success[500] : Colors.error[500] }} />
-                <Text style={{ fontSize: 22 }}>{coin.emoji}</Text>
-                <View>
-                  <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 16, color: Colors.neutral[900] }}>
-                    {coin.name}
+              <View style={styles.coinHeaderMobile}>
+                <View style={styles.coinInfoMobile}>
+                  <View style={[styles.statusDot, { backgroundColor: coin.change >= 0 ? Colors.success[500] : Colors.error[500] }]} />
+                  <Text style={styles.coinEmoji}>{coin.emoji}</Text>
+                  <View style={styles.coinNameContainer}>
+                    <Text style={styles.coinNameMobile}>{coin.name}</Text>
+                    <Text style={styles.coinTickerMobile}>
+                      {coin.ticker ? coin.ticker.toUpperCase() : coin.id?.slice(0, 4).toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.coinPriceMobile}>
+                  <Text style={styles.priceTextMobile}>${coin.price.toFixed(2)}</Text>
+                  <Text style={[
+                    styles.changeTextMobile,
+                    { color: coin.change >= 0 ? Colors.success[600] : Colors.error[600] }
+                  ]}>
+                    {coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%
                   </Text>
-                  {/* <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 12, color: Colors.neutral[500] }}>
-                    {coin.id.toUpperCase()}
-                  </Text> */}
                 </View>
               </View>
-              {/* Ticker Column */}
-              <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text
-                  style={{
-                    fontFamily: 'Nunito-SemiBold',
-                    fontSize: 14,
-                    color: Colors.neutral[600],
-                  }}
-                >
-                  {`$${coin.ticker.toUpperCase()}`}
+              <View style={styles.coinFooterMobile}>
+                <Text style={styles.volumeTextMobile}>
+                  Vol: ${(coin.price * 10000).toLocaleString()}
                 </Text>
               </View>
-              {/* Price Column */}
-              <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
-                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[800] }}>
-                  ${coin.price.toFixed(2)}
+            </>
+          ) : (
+            /* Desktop/Tablet Layout */
+            <>
+              <View style={styles.coinNameSection}>
+                <View style={[styles.statusDot, { backgroundColor: coin.change >= 0 ? Colors.success[500] : Colors.error[500] }]} />
+                <Text style={styles.coinEmoji}>{coin.emoji}</Text>
+                <View>
+                  <Text style={styles.coinName}>{coin.name}</Text>
+                </View>
+              </View>
+              
+              <View style={styles.coinTickerSection}>
+                <Text style={styles.coinTicker}>
+                  {coin.ticker ? coin.ticker.toUpperCase() : ''}
                 </Text>
+              </View>
+              
+              <View style={styles.coinPriceSection}>
+                <Text style={styles.priceText}>${coin.price.toFixed(2)}</Text>
               </View>
 
-              {/* 24h Change Column */}
-              <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
-                <Text style={{
-                  fontFamily: 'Nunito-Bold',
-                  fontSize: 14,
-                  color: coin.change >= 0 ? Colors.success[600] : Colors.error[600],
-                }}>
+              <View style={styles.coinChangeSection}>
+                <Text style={[
+                  styles.changeText,
+                  { color: coin.change >= 0 ? Colors.success[600] : Colors.error[600] }
+                ]}>
                   {coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%
                 </Text>
               </View>
 
-             {/* Volume Column */}
-              <View style={{ flex: 1, minWidth: 100, alignItems: 'flex-end' }}>
-                <View style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
-                  {/*<Text style={{ fontSize: 11, color: '#aaa' }}>Volume</Text>*/}
-                  <Text style={{ fontWeight: '600', fontSize: 13 }}>
-                    {(coin.price * 10000).toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-
-             
-            </>
-          ) : (
-            <>
-              {/* Name */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: coin.change >= 0 ? Colors.success[500] : Colors.error[500], marginRight: 6 }} />
-                <Text style={{ fontSize: 22 }}>{coin.emoji}</Text>
-                <View>
-                  <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 16, color: Colors.neutral[900] }}>
-                    {coin.name}
-                  </Text>
-                  {/* <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 12, color: Colors.neutral[500] }}>
-                    {coin.id.toUpperCase()}
-                  </Text> */}
-                  {/* Render ticker under name on mobile */}
-                  {/* Inserted ticker display here */}
-                  <Text style={{ fontSize: 14, color: Colors.neutral[600] }}>
-                    {(coin.ticker && coin.ticker.length > 0)
-                      ? coin.ticker.toUpperCase()
-                      : coin.id
-                        ? coin.id.slice(0, 4).toUpperCase()
-                        : ''}
-                  </Text>
-                </View>
-              </View>
-              {/* Responsive stacked info */}
-              <View style={{ marginTop: 8, width: '100%' }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 2 }}>
-                  <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[800] }}>
-                    ${coin.price.toFixed(2)}
-                  </Text>
-                  <Text style={{
-                    fontFamily: 'Nunito-Regular',
-                    fontSize: 13,
-                    color: Colors.neutral[600],
-                  }}>
-                    ${(coin.price * 10000).toLocaleString()}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{
-                    fontFamily: 'Nunito-Bold',
-                    fontSize: 13,
-                    color: coin.change >= 0 ? Colors.success[600] : Colors.error[600],
-                  }}>
-                    {coin.change >= 0 ? '+' : ''}{coin.change}%
-                  </Text>
-                </View>
+              <View style={styles.coinVolumeSection}>
+                <Text style={styles.volumeText}>
+                  {(coin.price * 10000).toLocaleString()}
+                </Text>
               </View>
             </>
           )}
-        </Pressable>
-      </View>
+        </View>
+      </Pressable>
     );
   };
 
@@ -358,221 +280,181 @@ export default function MarketScreen()  {
     };
 
     return (
-      <View style={styles.newsCard}>
+      <View style={[styles.newsCard, isSmallScreen && styles.newsCardSmall]}>
         <View style={styles.newsHeader}>
           <View style={styles.newsHeaderLeft}>
-            <Text style={styles.newsEmoji}>{item.emoji}</Text>
-            <Text style={styles.newsCoin}>{item.coin}</Text>
+            <Text style={[styles.newsEmoji, isSmallScreen && styles.newsEmojiSmall]}>{item.emoji}</Text>
+            <Text style={[styles.newsCoin, isSmallScreen && styles.newsCoinSmall]}>{item.coin}</Text>
           </View>
-          <Text style={styles.newsTimestamp}>{getTimeAgo(item.timestamp)}</Text>
+          <Text style={[styles.newsTimestamp, isSmallScreen && styles.newsTimestampSmall]}>
+            {getTimeAgo(item.timestamp)}
+          </Text>
         </View>
-        <Text style={[styles.newsHeadline, getImpactStyle()]}>
+        <Text style={[styles.newsHeadline, getImpactStyle(), isSmallScreen && styles.newsHeadlineSmall]}>
           {item.headline}
         </Text>
-        <Text style={[styles.newsImpact, getImpactStyle()]}>
+        <Text style={[styles.newsImpact, getImpactStyle(), isSmallScreen && styles.newsImpactSmall]}>
           {item.impact > 0 ? '+' : ''}{item.impact}% Impact
         </Text>
       </View>
     );
   };
 
-
   return (
     <View style={styles.container}>
-      {/* Coin Flip Animation for trade confirmation */}
       <CoinFlipAnimation visible={showCoinFlip} />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Market</Text>
-          <TouchableOpacity style={{ alignSelf: 'flex-end' }} onPress={() => setShowWLCModal(true)}>
-            <Text style={{
-              fontFamily: 'Nunito-Bold',
-              fontSize: 14,
-              color: Colors.primary[600],
-              backgroundColor: Colors.primary[50],
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 20,
-              overflow: 'hidden',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 3,
-            }}>
+        <View style={[styles.header, isSmallScreen && styles.headerSmall]}>
+          <Text style={[styles.title, isSmallScreen && styles.titleSmall]}>Market</Text>
+          <TouchableOpacity 
+            style={[styles.wlcButton, isSmallScreen && styles.wlcButtonSmall]} 
+            onPress={() => setShowWLCModal(true)}
+          >
+            <Text style={[styles.wlcButtonText, isSmallScreen && styles.wlcButtonTextSmall]}>
               🔍 Learn about WLC
             </Text>
           </TouchableOpacity>
-          <Text style={styles.subtitle}>Manage Your Crypto Assets & Stay Updated</Text>
-          <Text style={styles.balance}>💰 Balance: {formatMoney(balance)}</Text>
+          <Text style={[styles.subtitle, isSmallScreen && styles.subtitleSmall]}>
+            Manage Your Crypto Assets & Stay Updated
+          </Text>
+          <Text style={[styles.balance, isSmallScreen && styles.balanceSmall]}>
+            💰 Balance: {formatMoney(balance)}
+          </Text>
         </View>
 
-        <View style={styles.tabContainer}>
+        <View style={[styles.tabContainer, isSmallScreen && styles.tabContainerSmall]}>
           <TouchableOpacity 
-            style={[styles.tab, activeTab === 'trading' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'trading' && styles.activeTab, isSmallScreen && styles.tabSmall]}
             onPress={() => setActiveTab('trading')}
           >
-            <TrendingUp size={20} color={activeTab === 'trading' ? Colors.primary[600] : Colors.neutral[400]} />
-            <Text style={[styles.tabText, activeTab === 'trading' && styles.activeTabText]}>Trading</Text>
+            <TrendingUp size={isSmallScreen ? 16 : 20} color={activeTab === 'trading' ? Colors.primary[600] : Colors.neutral[400]} />
+            <Text style={[styles.tabText, activeTab === 'trading' && styles.activeTabText, isSmallScreen && styles.tabTextSmall]}>
+              Trading
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.tab, activeTab === 'news' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'news' && styles.activeTab, isSmallScreen && styles.tabSmall]}
             onPress={() => setActiveTab('news')}
           >
-            <Newspaper size={20} color={activeTab === 'news' ? Colors.primary[600] : Colors.neutral[400]} />
-            <Text style={[styles.tabText, activeTab === 'news' && styles.activeTabText]}>News</Text>
+            <Newspaper size={isSmallScreen ? 16 : 20} color={activeTab === 'news' ? Colors.primary[600] : Colors.neutral[400]} />
+            <Text style={[styles.tabText, activeTab === 'news' && styles.activeTabText, isSmallScreen && styles.tabTextSmall]}>
+              News
+            </Text>
           </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'stocks' && styles.activeTab]}
-          onPress={() => setActiveTab('stocks')}
-        >
-          <ArrowUpRight size={20} color={activeTab === 'stocks' ? Colors.primary[600] : Colors.neutral[400]} />
-          <Text style={[styles.tabText, activeTab === 'stocks' && styles.activeTabText]}>Stocks</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'stocks' && styles.activeTab, isSmallScreen && styles.tabSmall]}
+            onPress={() => setActiveTab('stocks')}
+          >
+            <ArrowUpRight size={isSmallScreen ? 16 : 20} color={activeTab === 'stocks' ? Colors.primary[600] : Colors.neutral[400]} />
+            <Text style={[styles.tabText, activeTab === 'stocks' && styles.activeTabText, isSmallScreen && styles.tabTextSmall]}>
+              Stocks
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {activeTab === 'trading' ? (
           <View style={styles.section}>
             {news.length > 0 && (
-              <View style={styles.trendingBanner}>
-                <TrendingUp size={24} color={Colors.warning[600]} style={styles.trendingIcon} />
-                <Text style={styles.trendingText}>
+              <View style={[styles.trendingBanner, isSmallScreen && styles.trendingBannerSmall]}>
+                <TrendingUp size={isSmallScreen ? 20 : 24} color={Colors.warning[600]} style={styles.trendingIcon} />
+                <Text style={[styles.trendingText, isSmallScreen && styles.trendingTextSmall]}>
                   Trending: {news[news.length - 1].coin} {news[news.length - 1].impact > 0 ? '+' : ''}{news[news.length - 1].impact}% 🚀
                 </Text>
               </View>
             )}
 
-            <Text style={styles.sectionTitle}>💱 Available Tokens</Text>
+            <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>💱 Available Tokens</Text>
 
-            {/* Category tab selector */}
-            {(() => {
-              // Ensure categories include new types such as DEX and GameFi
-              const categories = ['All', 'Meme', 'Stable', 'Utility', 'Meta', 'Layer1', 'DEX', 'GameFi'];
-              return (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 12, paddingHorizontal: 16 }}>
-                  {categories.map(category => (
-                    <TouchableOpacity
-                      key={category}
-                      style={{
-                        paddingVertical: 6,
-                        paddingHorizontal: 12,
-                        borderRadius: 20,
-                        backgroundColor: selectedCategory === category ? Colors.primary[600] : Colors.neutral[200],
-                        marginRight: 8,
-                      }}
-                      onPress={() => setSelectedCategory(category)}
-                    >
-                      <Text style={{
-                        fontFamily: 'Nunito-Bold',
-                        fontSize: 14,
-                        color: selectedCategory === category ? Colors.primary[50] : Colors.neutral[800],
-                      }}>
-                        {category}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              );
-            })()}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              style={[styles.categoryScroll, isSmallScreen && styles.categoryScrollSmall]}
+            >
+              {['All', 'Meme', 'Stable', 'Utility', 'Meta', 'Layer1', 'DEX', 'GameFi'].map(category => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryButton,
+                    selectedCategory === category && styles.categoryButtonActive,
+                    isSmallScreen && styles.categoryButtonSmall
+                  ]}
+                  onPress={() => setSelectedCategory(category)}
+                >
+                  <Text style={[
+                    styles.categoryButtonText,
+                    selectedCategory === category && styles.categoryButtonTextActive,
+                    isSmallScreen && styles.categoryButtonTextSmall
+                  ]}>
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-            {/* Header row for coin list - responsive */}
-            {isWide ? (
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingHorizontal: Layout.spacing.lg,
-                marginBottom: 4,
-              }}>
-                <Text style={{ flex: 2, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Name</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'center'}}>Symbol</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
-              </View>
-            ) : (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Layout.spacing.lg, marginBottom: 4 }}>
-                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Tokens</Text>
-                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Market Cap</Text>
+            {!isSmallScreen && (
+              <View style={styles.headerRow}>
+                <Text style={styles.headerText}>Name</Text>
+                <Text style={styles.headerText}>Symbol</Text>
+                <Text style={styles.headerText}>Price</Text>
+                <Text style={styles.headerText}>24h</Text>
+                <Text style={styles.headerText}>Volume</Text>
               </View>
             )}
             
             <View style={styles.coinList}>
-              {(() => {
-                // Filter tokens by category, but do not exclude new tokens missing a category
-                const filteredTokens = marketPrices.filter(
-                  coin =>
-                    selectedCategory === 'All' ||
-                    (coin.category === selectedCategory)
-                );
-                // Log filtered tokens for debugging
-                console.log(
-                  'Filtered Tokens:',
-                  filteredTokens
-                );
-                return filteredTokens
-                  .sort((a, b) => b.price - a.price)
-                  .map((coin, idx) => (
-                    <CoinCard
-                      key={coin.id}
-                      coin={{
-                        id: String(coin.id ?? ''),
-                        name: coin.name,
-                        emoji: coin.emoji ?? '🪙',
-                        price: coin.price,
-                        change: coin.change,
-                        ticker: coin.ticker ?? coin.id ?? '', // fallback to id if ticker missing
-                        // Add extra fields for modal if available
-                        current_price: coin.current_price ?? coin.price,
-                        high_24h: coin.high24h,
-                        low_24h: coin.low24h,
-                        total_volume: coin.total_volume,
-                        price_change_percentage_24h:
-                          coin.priceChangePercentage24h ?? coin.change,
-                      }}
-                      index={idx}
-                    />
-                  ));
-              })()}
+              {marketPrices
+                .filter(coin => selectedCategory === 'All' || coin.category === selectedCategory)
+                .sort((a, b) => b.price - a.price)
+                .map((coin, idx) => (
+                  <CoinCard
+                    key={coin.id}
+                    coin={{
+                      id: String(coin.id ?? ''),
+                      name: coin.name,
+                      emoji: coin.emoji ?? '🪙',
+                      price: coin.price,
+                      change: coin.change,
+                      ticker: coin.ticker ?? coin.id ?? '',
+                      current_price: coin.current_price ?? coin.price,
+                      high_24h: coin.high24h,
+                      low_24h: coin.low24h,
+                      total_volume: coin.total_volume,
+                      price_change_percentage_24h: coin.priceChangePercentage24h ?? coin.change,
+                    }}
+                    index={idx}
+                  />
+                ))}
             </View>
-            
           </View>
-          
         ) : activeTab === 'news' ? (
           <View style={styles.newsList}>
             {news.length > 0 ? (
               news.map(item => <NewsCard key={item.id} item={item} />)
             ) : (
-              <View style={styles.emptyNews}>
-                <Text style={styles.emptyNewsText}>No market news yet.</Text>
-                <Text style={styles.emptyNewsSubtext}>Make some trades to generate news!</Text>
+              <View style={[styles.emptyNews, isSmallScreen && styles.emptyNewsSmall]}>
+                <Text style={[styles.emptyNewsText, isSmallScreen && styles.emptyNewsTextSmall]}>
+                  No market news yet.
+                </Text>
+                <Text style={[styles.emptyNewsSubtext, isSmallScreen && styles.emptyNewsSubtextSmall]}>
+                  Make some trades to generate news!
+                </Text>
               </View>
             )}
           </View>
-        ) : null}
-
-        {activeTab === 'stocks' && (
+        ) : (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📊 Market Stocks</Text>
-            {isWide ? (
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingHorizontal: Layout.spacing.lg,
-                marginBottom: 4,
-              }}>
-                <Text style={{ flex: 2, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Name</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'center'}}>Symbol</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Price</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>24h</Text>
-                <Text style={{ flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600], textAlign: 'right' }}>Volume</Text>
-              </View>
-            ) : (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Layout.spacing.lg, marginBottom: 4 }}>
-                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Tokens</Text>
-                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: Colors.neutral[600] }}>Market Cap</Text>
+            <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>📊 Market Stocks</Text>
+            
+            {!isSmallScreen && (
+              <View style={styles.headerRow}>
+                <Text style={styles.headerText}>Name</Text>
+                <Text style={styles.headerText}>Symbol</Text>
+                <Text style={styles.headerText}>Price</Text>
+                <Text style={styles.headerText}>24h</Text>
+                <Text style={styles.headerText}>Volume</Text>
               </View>
             )}
+            
             <View style={styles.coinList}>
               {companyShares && companyShares.length > 0 ? (
                 companyShares.map((share, idx) => (
@@ -594,13 +476,9 @@ export default function MarketScreen()  {
                     index={idx}
                   />
                 ))
-              ) : companyShares ? (
-                <Text style={{ textAlign: 'center', color: Colors.neutral[500], marginTop: 12 }}>
-                  No stock data available.
-                </Text>
               ) : (
-                <Text style={{ textAlign: 'center', color: Colors.neutral[400], marginTop: 12 }}>
-                  Loading stock data...
+                <Text style={[styles.emptyText, isSmallScreen && styles.emptyTextSmall]}>
+                  {companyShares ? 'No stock data available.' : 'Loading stock data...'}
                 </Text>
               )}
             </View>
@@ -608,7 +486,7 @@ export default function MarketScreen()  {
         )}
       </ScrollView>
 
-      {/* Legacy trade modal (keep for buy/sell) */}
+      {/* Trade Modal */}
       <Modal
         visible={!!selectedCoin}
         animationType="slide"
@@ -617,293 +495,156 @@ export default function MarketScreen()  {
       >
         {selectedCoin && (
           <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              {/* Token Header: Icon, Name, Symbol */}
-              <View style={{ alignItems: 'center', marginBottom: 6 }}>
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 2,
-                }}>
-                  <Text style={{ fontSize: 32 }}>{selectedCoin.emoji || '🪙'}</Text>
-                  <Text style={{
-                    fontFamily: 'Nunito-Bold',
-                    fontSize: 22,
-                    color: Colors.primary[700],
-                    marginLeft: 2,
-                  }}>
+            <View style={[styles.modalContent, isSmallScreen && styles.modalContentSmall]}>
+              <View style={styles.modalHeader}>
+                <View style={styles.modalTitleRow}>
+                  <Text style={[styles.modalEmoji, isSmallScreen && styles.modalEmojiSmall]}>
+                    {selectedCoin.emoji || '🪙'}
+                  </Text>
+                  <Text style={[styles.modalTitle, isSmallScreen && styles.modalTitleSmall]}>
                     {selectedCoin.name}
                   </Text>
-                  <Text style={{
-                    fontFamily: 'Nunito-SemiBold',
-                    fontSize: 16,
-                    color: Colors.neutral[600],
-                    marginLeft: 6,
-                  }}>
+                  <Text style={[styles.modalTicker, isSmallScreen && styles.modalTickerSmall]}>
                     ({selectedCoin.ticker ? selectedCoin.ticker.toUpperCase() : ''})
                   </Text>
                 </View>
               </View>
-              {/* Card-like Stats: price, 24h high/low, volume, change, chart */}
-              <View style={{
-                backgroundColor: Colors.neutral[50],
-                borderRadius: 14,
-                padding: 16,
-                marginBottom: 18,
-                borderWidth: 1,
-                borderColor: Colors.neutral[200],
-                ...Layout.shadows.small,
-                alignItems: 'center',
-              }}>
-                {/* Current Price */}
-                <Text style={{
-                  fontFamily: 'Nunito-Bold',
-                  fontSize: 26,
-                  color: Colors.primary[500],
-                  marginBottom: 6,
-                  textAlign: 'center'
-                }}>
+
+              <View style={[styles.modalStatsCard, isSmallScreen && styles.modalStatsCardSmall]}>
+                <Text style={[styles.modalPrice, isSmallScreen && styles.modalPriceSmall]}>
                   ${selectedCoin.price.toFixed(2)}
                 </Text>
-                {/* 24h High/Low */}
-                <View style={{
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginBottom: 4,
-                  gap: 22,
-                }}>
-                  <View>
-                    <Text style={{
-                      fontFamily: 'Nunito-Regular',
-                      fontSize: 13,
-                      color: Colors.neutral[700],
-                      textAlign: 'center',
-                    }}>
+                
+                <View style={[styles.modalStatsRow, isSmallScreen && styles.modalStatsRowSmall]}>
+                  <View style={styles.modalStatItem}>
+                    <Text style={[styles.modalStatLabel, isSmallScreen && styles.modalStatLabelSmall]}>
                       24h High
                     </Text>
-                    <Text style={{
-                      fontFamily: 'Nunito-Bold',
-                      fontSize: 15,
-                      color: Colors.success[600],
-                      textAlign: 'center',
-                    }}>
+                    <Text style={[styles.modalStatValue, styles.modalStatValuePositive, isSmallScreen && styles.modalStatValueSmall]}>
                       {selectedCoin.high_24h !== undefined ? `$${selectedCoin.high_24h}` : 'N/A'}
                     </Text>
                   </View>
-                  <View>
-                    <Text style={{
-                      fontFamily: 'Nunito-Regular',
-                      fontSize: 13,
-                      color: Colors.neutral[700],
-                      textAlign: 'center',
-                    }}>
+                  <View style={styles.modalStatItem}>
+                    <Text style={[styles.modalStatLabel, isSmallScreen && styles.modalStatLabelSmall]}>
                       24h Low
                     </Text>
-                    <Text style={{
-                      fontFamily: 'Nunito-Bold',
-                      fontSize: 15,
-                      color: Colors.error[600],
-                      textAlign: 'center',
-                    }}>
+                    <Text style={[styles.modalStatValue, styles.modalStatValueNegative, isSmallScreen && styles.modalStatValueSmall]}>
                       {selectedCoin.low_24h !== undefined ? `$${selectedCoin.low_24h}` : 'N/A'}
                     </Text>
                   </View>
                 </View>
-                {/* 24h Volume & Change */}
-                <View style={{
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: 22,
-                  marginBottom: 6,
-                }}>
-                  <View>
-                    <Text style={{
-                      fontFamily: 'Nunito-Regular',
-                      fontSize: 13,
-                      color: Colors.neutral[700],
-                      textAlign: 'center',
-                    }}>
+
+                <View style={[styles.modalStatsRow, isSmallScreen && styles.modalStatsRowSmall]}>
+                  <View style={styles.modalStatItem}>
+                    <Text style={[styles.modalStatLabel, isSmallScreen && styles.modalStatLabelSmall]}>
                       24h Volume
                     </Text>
-                    <Text style={{
-                      fontFamily: 'Nunito-Bold',
-                      fontSize: 15,
-                      color: Colors.primary[700],
-                      textAlign: 'center',
-                    }}>
+                    <Text style={[styles.modalStatValue, isSmallScreen && styles.modalStatValueSmall]}>
                       {selectedCoin.total_volume !== undefined ? selectedCoin.total_volume.toLocaleString() : 'N/A'}
                     </Text>
                   </View>
-                  <View>
-                    <Text style={{
-                      fontFamily: 'Nunito-Regular',
-                      fontSize: 13,
-                      color: Colors.neutral[700],
-                      textAlign: 'center',
-                    }}>
+                  <View style={styles.modalStatItem}>
+                    <Text style={[styles.modalStatLabel, isSmallScreen && styles.modalStatLabelSmall]}>
                       24h Change
                     </Text>
-                    <Text style={{
-                      fontFamily: 'Nunito-Bold',
-                      fontSize: 15,
-                      color: selectedCoin.change >= 0 ? Colors.success[600] : Colors.error[600],
-                      textAlign: 'center',
-                    }}>
+                    <Text style={[
+                      styles.modalStatValue,
+                      selectedCoin.change >= 0 ? styles.modalStatValuePositive : styles.modalStatValueNegative,
+                      isSmallScreen && styles.modalStatValueSmall
+                    ]}>
                       {selectedCoin.change >= 0 ? '+' : ''}{selectedCoin.change}%
                     </Text>
                   </View>
                 </View>
-                {/* Chart Placeholder */}
-                <View style={{
-                  width: '100%',
-                  height: 60,
-                  marginTop: 8,
-                  marginBottom: 2,
-                  backgroundColor: Colors.neutral[100],
-                  borderRadius: 8,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <Text style={{ color: Colors.neutral[400], fontSize: 13, fontFamily: 'Nunito-Regular' }}>
-                    {/* Replace with chart in future */}
+
+                <View style={[styles.modalChartPlaceholder, isSmallScreen && styles.modalChartPlaceholderSmall]}>
+                  <Text style={[styles.modalChartText, isSmallScreen && styles.modalChartTextSmall]}>
                     [Chart coming soon]
                   </Text>
                 </View>
               </View>
-              {/* Quantity input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Quantity</Text>
+
+              <View style={[styles.inputContainer, isSmallScreen && styles.inputContainerSmall]}>
+                <Text style={[styles.inputLabel, isSmallScreen && styles.inputLabelSmall]}>Quantity</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isSmallScreen && styles.inputSmall]}
                   value={quantity}
                   onChangeText={setQuantity}
                   keyboardType="numeric"
                   placeholder="Enter amount"
                 />
                 {selectedCoin && quantity.trim() !== '' && !isNaN(parseFloat(quantity)) && (
-                  <Text style={styles.totalCostText}>
+                  <Text style={[styles.totalCostText, isSmallScreen && styles.totalCostTextSmall]}>
                     Total Cost: {formatMoney(selectedCoin.price * parseFloat(quantity))}
                   </Text>
                 )}
               </View>
+
               {error && (
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={[styles.errorText, isSmallScreen && styles.errorTextSmall]}>{error}</Text>
               )}
-              {/* Buy/Sell Button Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+
+              <View style={[styles.buttonRow, isSmallScreen && styles.buttonRowSmall]}>
                 <TouchableOpacity
-                  style={{
-                    flex: 1,
-                    backgroundColor: Colors.success[500],
-                    paddingVertical: 14,
-                    marginRight: 8,
-                    borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                  }}
+                  style={[styles.buyButton, isSmallScreen && styles.tradeButtonSmall]}
                   onPress={() => handleTrade('buy')}
                 >
-                  <Text style={{ color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 16, textAlign: 'center' }}>💸 Buy</Text>
+                  <Text style={[styles.tradeButtonText, isSmallScreen && styles.tradeButtonTextSmall]}>
+                    💸 Buy
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={{
-                    flex: 1,
-                    backgroundColor: Colors.error[500],
-                    paddingVertical: 14,
-                    marginLeft: 8,
-                    borderRadius: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    opacity: getPortfolioQuantity(selectedCoin.name) === 0 ? 0.6 : 1,
-                  }}
+                  style={[
+                    styles.sellButton,
+                    isSmallScreen && styles.tradeButtonSmall,
+                    getPortfolioQuantity(selectedCoin.name) === 0 && styles.disabledButton
+                  ]}
                   onPress={() => handleTrade('sell')}
                   disabled={getPortfolioQuantity(selectedCoin.name) === 0}
                 >
-                  <Text style={{ color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 16, textAlign: 'center' }}>📉 Sell</Text>
+                  <Text style={[styles.tradeButtonText, isSmallScreen && styles.tradeButtonTextSmall]}>
+                    📉 Sell
+                  </Text>
                 </TouchableOpacity>
               </View>
-              {/* Portfolio, Balance, Last Update summary row */}
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: 18,
-                marginBottom: 2,
-                backgroundColor: Colors.neutral[50],
-                borderRadius: 10,
-                paddingVertical: 10,
-                paddingHorizontal: 8,
-                borderWidth: 1,
-                borderColor: Colors.neutral[200],
-                gap: 6,
-              }}>
-                <View style={{ flex: 1, alignItems: 'center' }}>
-                  <Text style={{
-                    fontFamily: 'Nunito-Regular',
-                    fontSize: 13,
-                    color: Colors.neutral[600]
-                  }}>
+
+              <View style={[styles.modalSummaryRow, isSmallScreen && styles.modalSummaryRowSmall]}>
+                <View style={styles.modalSummaryItem}>
+                  <Text style={[styles.modalSummaryLabel, isSmallScreen && styles.modalSummaryLabelSmall]}>
                     Portfolio Holdings
                   </Text>
-                  <Text style={{
-                    fontFamily: 'Nunito-Bold',
-                    fontSize: 15,
-                    color: Colors.primary[700]
-                  }}>
+                  <Text style={[styles.modalSummaryValue, isSmallScreen && styles.modalSummaryValueSmall]}>
                     {getPortfolioQuantity(selectedCoin.name)}
                   </Text>
                 </View>
-                <View style={{ flex: 1, alignItems: 'center' }}>
-                  <Text style={{
-                    fontFamily: 'Nunito-Regular',
-                    fontSize: 13,
-                    color: Colors.neutral[600]
-                  }}>
+                <View style={styles.modalSummaryItem}>
+                  <Text style={[styles.modalSummaryLabel, isSmallScreen && styles.modalSummaryLabelSmall]}>
                     Your Balance
                   </Text>
-                  <Text style={{
-                    fontFamily: 'Nunito-Bold',
-                    fontSize: 15,
-                    color: Colors.primary[700]
-                  }}>
+                  <Text style={[styles.modalSummaryValue, isSmallScreen && styles.modalSummaryValueSmall]}>
                     {formatMoney(balance)}
                   </Text>
                 </View>
-                <View style={{ flex: 1, alignItems: 'center' }}>
-                  <Text style={{
-                    fontFamily: 'Nunito-Regular',
-                    fontSize: 13,
-                    color: Colors.neutral[600]
-                  }}>
+                <View style={styles.modalSummaryItem}>
+                  <Text style={[styles.modalSummaryLabel, isSmallScreen && styles.modalSummaryLabelSmall]}>
                     Last Update
                   </Text>
-                  <Text style={{
-                    fontFamily: 'Nunito-Bold',
-                    fontSize: 13,
-                    color: Colors.neutral[500]
-                  }}>
+                  <Text style={[styles.modalSummaryTime, isSmallScreen && styles.modalSummaryTimeSmall]}>
                     {new Date().toLocaleTimeString()}
                   </Text>
                 </View>
               </View>
+
               <GameButton
                 title="Cancel"
                 onPress={() => setSelectedCoin(null)}
-                style={styles.cancelButton}
-                textStyle={styles.cancelButtonText}
+                style={[styles.cancelButton, isSmallScreen && styles.cancelButtonSmall]}
+                textStyle={[styles.cancelButtonText, isSmallScreen && styles.cancelButtonTextSmall]}
               />
             </View>
           </View>
         )}
       </Modal>
-
 
       {/* WLC Info Modal */}
       <Modal
@@ -913,32 +654,40 @@ export default function MarketScreen()  {
         onRequestClose={() => setShowWLCModal(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.wlcModalContent}>
-            <Text style={styles.modalTitle}>🚀 Wallnance Coin (WLC)</Text>
-            <Text style={styles.modalSubtitle}>Version 1.0 • June 2025</Text>
-            <Text style={styles.modalDescription}>
-              🪙 <Text style={{ fontWeight: 'bold' }}>WLC (Wallnance Coin)</Text> is the official digital currency of Wallnance Tycoon — designed to power in-game transactions and reward strategic players.
+          <View style={[styles.wlcModalContent, isSmallScreen && styles.wlcModalContentSmall]}>
+            <Text style={[styles.wlcModalTitle, isSmallScreen && styles.wlcModalTitleSmall]}>
+              🚀 Wallnance Coin (WLC)
             </Text>
-            <Text style={styles.modalDescription}>
-              🔒 <Text style={{ fontWeight: 'bold' }}>Fixed Supply:</Text> 5,000,000 WLC — non-mintable and deflationary, with burn mechanisms applied on premium purchases and upgrades.
+            <Text style={[styles.wlcModalSubtitle, isSmallScreen && styles.wlcModalSubtitleSmall]}>
+              Version 1.0 • June 2025
             </Text>
-            <Text style={styles.modalDescription}>
-              🎁 <Text style={{ fontWeight: 'bold' }}>Distribution:</Text> 70% Player Rewards • 20% Game Treasury • 10% Developer Reserve.
-            </Text>
-            <Text style={styles.modalDescription}>
-              🧠 <Text style={{ fontWeight: 'bold' }}>Utility:</Text> WLC can be used to access premium features, unlock game expansions, and participate in exclusive events and community governance.
-            </Text>
-            <Text style={styles.modalDescription}>
-              🚀 <Text style={{ fontWeight: 'bold' }}>Early Access Bonus:</Text> Players who join early receive 1,000 WLC to kickstart their journey.
-            </Text>
-            <Text style={styles.modalDescription}>
-              🏗️ <Text style={{ fontWeight: 'bold' }}>Built by KANEDEV</Text> — Empowering gamers with true economic simulation.
-            </Text>
+            
+            <ScrollView style={styles.wlcModalScroll} showsVerticalScrollIndicator={false}>
+              <Text style={[styles.wlcModalDescription, isSmallScreen && styles.wlcModalDescriptionSmall]}>
+                🪙 <Text style={{ fontWeight: 'bold' }}>WLC (Wallnance Coin)</Text> is the official digital currency of Wallnance Tycoon — designed to power in-game transactions and reward strategic players.
+              </Text>
+              <Text style={[styles.wlcModalDescription, isSmallScreen && styles.wlcModalDescriptionSmall]}>
+                🔒 <Text style={{ fontWeight: 'bold' }}>Fixed Supply:</Text> 5,000,000 WLC — non-mintable and deflationary, with burn mechanisms applied on premium purchases and upgrades.
+              </Text>
+              <Text style={[styles.wlcModalDescription, isSmallScreen && styles.wlcModalDescriptionSmall]}>
+                🎁 <Text style={{ fontWeight: 'bold' }}>Distribution:</Text> 70% Player Rewards • 20% Game Treasury • 10% Developer Reserve.
+              </Text>
+              <Text style={[styles.wlcModalDescription, isSmallScreen && styles.wlcModalDescriptionSmall]}>
+                🧠 <Text style={{ fontWeight: 'bold' }}>Utility:</Text> WLC can be used to access premium features, unlock game expansions, and participate in exclusive events and community governance.
+              </Text>
+              <Text style={[styles.wlcModalDescription, isSmallScreen && styles.wlcModalDescriptionSmall]}>
+                🚀 <Text style={{ fontWeight: 'bold' }}>Early Access Bonus:</Text> Players who join early receive 1,000 WLC to kickstart their journey.
+              </Text>
+              <Text style={[styles.wlcModalDescription, isSmallScreen && styles.wlcModalDescriptionSmall]}>
+                🏗️ <Text style={{ fontWeight: 'bold' }}>Built by KANEDEV</Text> — Empowering gamers with true economic simulation.
+              </Text>
+            </ScrollView>
+            
             <GameButton
               title="Close"
               onPress={() => setShowWLCModal(false)}
-              style={styles.cancelButton}
-              textStyle={styles.cancelButtonText}
+              style={[styles.cancelButton, isSmallScreen && styles.cancelButtonSmall]}
+              textStyle={[styles.cancelButtonText, isSmallScreen && styles.cancelButtonTextSmall]}
             />
           </View>
         </View>
@@ -957,10 +706,15 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: Layout.spacing.lg,
+    paddingBottom: Layout.spacing.xxl,
   },
   header: {
     marginBottom: Layout.spacing.xl,
     marginTop: Layout.spacing.xl,
+  },
+  headerSmall: {
+    marginBottom: Layout.spacing.lg,
+    marginTop: Layout.spacing.lg,
   },
   title: {
     fontFamily: 'Nunito-Bold',
@@ -968,16 +722,47 @@ const styles = StyleSheet.create({
     color: Colors.primary[700],
     marginBottom: Layout.spacing.xs,
   },
+  titleSmall: {
+    fontSize: 24,
+  },
+  wlcButton: {
+    alignSelf: 'flex-end',
+    backgroundColor: Colors.primary[50],
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: Layout.spacing.sm,
+  },
+  wlcButtonSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  wlcButtonText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.primary[600],
+  },
+  wlcButtonTextSmall: {
+    fontSize: 12,
+  },
   subtitle: {
     fontFamily: 'Nunito-Regular',
     fontSize: 18,
     color: Colors.neutral[600],
+  },
+  subtitleSmall: {
+    fontSize: 14,
   },
   balance: {
     fontFamily: 'Nunito-Bold',
     fontSize: 20,
     color: Colors.primary[600],
     marginTop: Layout.spacing.md,
+  },
+  balanceSmall: {
+    fontSize: 16,
+    marginTop: Layout.spacing.sm,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -986,6 +771,11 @@ const styles = StyleSheet.create({
     padding: Layout.spacing.xs,
     marginBottom: Layout.spacing.lg,
     ...Layout.shadows.small,
+  },
+  tabContainerSmall: {
+    borderRadius: Layout.borderRadius.md,
+    padding: Layout.spacing.xs / 2,
+    marginBottom: Layout.spacing.md,
   },
   tab: {
     flex: 1,
@@ -996,6 +786,10 @@ const styles = StyleSheet.create({
     paddingVertical: Layout.spacing.md,
     borderRadius: Layout.borderRadius.md,
   },
+  tabSmall: {
+    paddingVertical: Layout.spacing.sm,
+    gap: Layout.spacing.xs,
+  },
   activeTab: {
     backgroundColor: Colors.primary[50],
   },
@@ -1003,6 +797,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-SemiBold',
     fontSize: 16,
     color: Colors.neutral[400],
+  },
+  tabTextSmall: {
+    fontSize: 12,
   },
   activeTabText: {
     color: Colors.primary[600],
@@ -1016,6 +813,10 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.xl,
     ...Layout.shadows.small,
   },
+  trendingBannerSmall: {
+    padding: Layout.spacing.sm,
+    marginBottom: Layout.spacing.lg,
+  },
   trendingIcon: {
     marginRight: Layout.spacing.sm,
   },
@@ -1023,72 +824,201 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
     color: Colors.warning[700],
+    flex: 1,
+  },
+  trendingTextSmall: {
+    fontSize: 12,
+  },
+  section: {
+    marginBottom: Layout.spacing.xl,
+  },
+  sectionTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 20,
+    color: Colors.primary[600],
+    marginBottom: Layout.spacing.md,
+  },
+  sectionTitleSmall: {
+    fontSize: 16,
+    marginBottom: Layout.spacing.sm,
+  },
+  categoryScroll: {
+    marginVertical: 12,
+    paddingHorizontal: 16,
+  },
+  categoryScrollSmall: {
+    marginVertical: 8,
+    paddingHorizontal: 8,
+  },
+  categoryButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: Colors.neutral[200],
+    marginRight: 8,
+  },
+  categoryButtonSmall: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    marginRight: 6,
+  },
+  categoryButtonActive: {
+    backgroundColor: Colors.primary[600],
+  },
+  categoryButtonText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.neutral[800],
+  },
+  categoryButtonTextSmall: {
+    fontSize: 12,
+  },
+  categoryButtonTextActive: {
+    color: Colors.primary[50],
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Layout.spacing.lg,
+    marginBottom: 4,
+  },
+  headerText: {
+    flex: 1,
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.neutral[600],
+    textAlign: 'center',
   },
   coinList: {
     gap: Layout.spacing.md,
   },
-  coinCardBase: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+  coinCard: {
+    backgroundColor: Colors.card,
     borderRadius: 12,
     marginBottom: 8,
     borderBottomWidth: 1,
     borderColor: Colors.neutral[200],
-  },
-  coinCardWide: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    rowGap: 10,
-  },
-  coinCardNarrow: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    gap: Layout.spacing.md,
-  },
-  coinCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.card,
-    borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.lg,
     ...Layout.shadows.small,
   },
-  coinInfo: {
+  coinCardSmall: {
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  coinCardContent: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  coinCardContentSmall: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  coinCardContentLarge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Layout.spacing.md,
+    justifyContent: 'space-between',
+  },
+  coinHeaderMobile: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  coinInfoMobile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  coinNameContainer: {
+    marginLeft: 8,
+  },
+  coinNameMobile: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.neutral[900],
+  },
+  coinTickerMobile: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    color: Colors.neutral[600],
+    marginTop: 2,
+  },
+  coinPriceMobile: {
+    alignItems: 'flex-end',
+  },
+  priceTextMobile: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.neutral[800],
+  },
+  changeTextMobile: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  coinFooterMobile: {
+    alignItems: 'flex-start',
+  },
+  volumeTextMobile: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    color: Colors.neutral[600],
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
   coinEmoji: {
-    fontSize: 32,
+    fontSize: 22,
+    marginRight: 8,
+  },
+  coinNameSection: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   coinName: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 18,
-    color: Colors.neutral[800],
-    marginBottom: 2,
-  },
-  coinPrice: {
-    fontFamily: 'Nunito-SemiBold',
     fontSize: 16,
+    color: Colors.neutral[900],
+  },
+  coinTickerSection: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  coinTicker: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 14,
     color: Colors.neutral[600],
   },
-  portfolioQuantity: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 12,
-    color: Colors.neutral[500],
-    marginTop: 2,
+  coinPriceSection: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
-  trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Layout.spacing.xs,
-  },
-  trendText: {
+  priceText: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 16,
+    fontSize: 14,
+    color: Colors.neutral[800],
+  },
+  coinChangeSection: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  changeText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+  },
+  coinVolumeSection: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  volumeText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 13,
+    color: Colors.neutral[600],
   },
   newsList: {
     gap: Layout.spacing.md,
@@ -1098,6 +1028,10 @@ const styles = StyleSheet.create({
     borderRadius: Layout.borderRadius.md,
     padding: Layout.spacing.lg,
     ...Layout.shadows.small,
+  },
+  newsCardSmall: {
+    padding: Layout.spacing.md,
+    borderRadius: Layout.borderRadius.sm,
   },
   newsHeader: {
     flexDirection: 'row',
@@ -1113,15 +1047,24 @@ const styles = StyleSheet.create({
   newsEmoji: {
     fontSize: 24,
   },
+  newsEmojiSmall: {
+    fontSize: 20,
+  },
   newsCoin: {
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
     color: Colors.primary[600],
   },
+  newsCoinSmall: {
+    fontSize: 14,
+  },
   newsTimestamp: {
     fontFamily: 'Nunito-Regular',
     fontSize: 12,
     color: Colors.neutral[500],
+  },
+  newsTimestampSmall: {
+    fontSize: 10,
   },
   newsHeadline: {
     fontFamily: 'Nunito-SemiBold',
@@ -1129,9 +1072,16 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: Layout.spacing.xs,
   },
+  newsHeadlineSmall: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
   newsImpact: {
     fontFamily: 'Nunito-Bold',
     fontSize: 14,
+  },
+  newsImpactSmall: {
+    fontSize: 12,
   },
   positiveImpact: {
     color: Colors.success[600],
@@ -1149,107 +1099,210 @@ const styles = StyleSheet.create({
     borderRadius: Layout.borderRadius.md,
     ...Layout.shadows.small,
   },
+  emptyNewsSmall: {
+    padding: Layout.spacing.lg,
+  },
   emptyNewsText: {
     fontFamily: 'Nunito-Bold',
     fontSize: 18,
     color: Colors.neutral[600],
     marginBottom: Layout.spacing.xs,
   },
+  emptyNewsTextSmall: {
+    fontSize: 16,
+  },
   emptyNewsSubtext: {
     fontFamily: 'Nunito-Regular',
     fontSize: 14,
     color: Colors.neutral[500],
+  },
+  emptyNewsSubtextSmall: {
+    fontSize: 12,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: Colors.neutral[500],
+    marginTop: 12,
+    fontSize: 14,
+  },
+  emptyTextSmall: {
+    fontSize: 12,
+  },
+  coinFlipContainer: {
+    position: 'absolute',
+    top: '40%',
+    left: '45%',
+    zIndex: 10,
+  },
+  coinFlipAnimation: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.primary[500],
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  coinFlipText: {
+    fontSize: 28,
+    color: 'white',
+    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: Layout.spacing.lg,
   },
   modalContent: {
     backgroundColor: Colors.card,
     borderRadius: Layout.borderRadius.lg,
     width: '90%',
+    maxWidth: 500,
     padding: Layout.spacing.xl,
-    gap: Layout.spacing.lg,
     ...Layout.shadows.medium,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.13,
-    shadowRadius: 12,
+    maxHeight: '90%',
+  },
+  modalContentSmall: {
+    width: '95%',
+    padding: Layout.spacing.lg,
+    borderRadius: Layout.borderRadius.md,
   },
   modalHeader: {
     alignItems: 'center',
-    gap: Layout.spacing.xs,
-    marginBottom: Layout.spacing.sm,
-    backgroundColor: Colors.neutral[50],
-    paddingVertical: Layout.spacing.md,
-    borderRadius: Layout.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-    ...Layout.shadows.medium,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.13,
-    shadowRadius: 8,
+    marginBottom: Layout.spacing.lg,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Layout.spacing.sm,
+  },
+  modalEmoji: {
+    fontSize: 32,
+  },
+  modalEmojiSmall: {
+    fontSize: 24,
   },
   modalTitle: {
-  fontFamily: 'Nunito-Bold',
-  fontSize: 22,
-  color: '#f8fafc', // brighter for visibility
-  textAlign: 'center',
-},
+    fontFamily: 'Nunito-Bold',
+    fontSize: 22,
+    color: Colors.primary[700],
+  },
+  modalTitleSmall: {
+    fontSize: 18,
+  },
+  modalTicker: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 16,
+    color: Colors.neutral[600],
+  },
+  modalTickerSmall: {
+    fontSize: 14,
+  },
+  modalStatsCard: {
+    backgroundColor: Colors.neutral[50],
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    ...Layout.shadows.small,
+    alignItems: 'center',
+  },
+  modalStatsCardSmall: {
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 10,
+  },
   modalPrice: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 24,
+    fontSize: 26,
     color: Colors.primary[500],
+    marginBottom: 6,
+    textAlign: 'center',
   },
-  portfolioInfo: {
-    backgroundColor: Colors.neutral[50],
-    borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.md,
-    marginBottom: Layout.spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
+  modalPriceSmall: {
+    fontSize: 20,
+    marginBottom: 4,
   },
-  portfolioLabel: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 14,
-    color: Colors.primary[600],
-    marginBottom: Layout.spacing.xs,
-  },
-  portfolioValue: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 18,
-    color: Colors.primary[700],
-  },
-  balanceContainer: {
-    backgroundColor: Colors.neutral[50],
-    borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.md,
+  modalStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
+    marginBottom: 4,
+    gap: 22,
   },
-  balanceLabel: {
+  modalStatsRowSmall: {
+    gap: 16,
+    marginBottom: 2,
+  },
+  modalStatItem: {
+    alignItems: 'center',
+  },
+  modalStatLabel: {
     fontFamily: 'Nunito-Regular',
-    fontSize: 16,
-    color: Colors.primary[600],
-    marginBottom: Layout.spacing.xs,
+    fontSize: 13,
+    color: Colors.neutral[700],
+    textAlign: 'center',
   },
-  balanceValue: {
+  modalStatLabelSmall: {
+    fontSize: 11,
+  },
+  modalStatValue: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 24,
-    color: Colors.primary[700],
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  modalStatValueSmall: {
+    fontSize: 13,
+  },
+  modalStatValuePositive: {
+    color: Colors.success[600],
+  },
+  modalStatValueNegative: {
+    color: Colors.error[600],
+  },
+  modalChartPlaceholder: {
+    width: '100%',
+    height: 60,
+    marginTop: 8,
+    marginBottom: 2,
+    backgroundColor: Colors.neutral[100],
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalChartPlaceholderSmall: {
+    height: 40,
+    marginTop: 6,
+  },
+  modalChartText: {
+    color: Colors.neutral[400],
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+  },
+  modalChartTextSmall: {
+    fontSize: 11,
   },
   inputContainer: {
     gap: Layout.spacing.sm,
     marginBottom: Layout.spacing.md,
   },
+  inputContainerSmall: {
+    gap: Layout.spacing.xs,
+    marginBottom: Layout.spacing.sm,
+  },
   inputLabel: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 16,
     color: Colors.neutral[600],
+  },
+  inputLabelSmall: {
+    fontSize: 14,
   },
   input: {
     fontFamily: 'Nunito-Regular',
@@ -1262,37 +1315,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.neutral[300],
     ...Layout.shadows.small,
   },
-  buttonGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Layout.spacing.md,
-  },
-  buyButton: {
-    flex: 1,
-    backgroundColor: Colors.success[500],
-    paddingVertical: Layout.spacing.sm,
-  },
-  sellButton: {
-    flex: 1,
-    backgroundColor: Colors.error[500],
-    paddingVertical: Layout.spacing.sm,
-  },
-  cancelButton: {
-    backgroundColor: Colors.neutral[300],
-    borderRadius: Layout.borderRadius.md,
-    paddingVertical: Layout.spacing.sm,
-  },
-  cancelButtonText: {
-    color: Colors.neutral[700],
+  inputSmall: {
+    padding: Layout.spacing.sm,
     fontSize: 16,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 14,
-    color: Colors.error[600],
-    textAlign: 'center',
-    marginBottom: Layout.spacing.md,
+    borderRadius: Layout.borderRadius.sm,
   },
   totalCostText: {
     fontFamily: 'Nunito-SemiBold',
@@ -1301,36 +1327,169 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: Layout.spacing.sm,
   },
-  section: {
-    marginBottom: Layout.spacing.xl,
+  totalCostTextSmall: {
+    fontSize: 14,
+    marginVertical: Layout.spacing.xs,
   },
-  sectionTitle: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 20,
-    color: Colors.primary[600],
+  errorText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: Colors.error[600],
+    textAlign: 'center',
     marginBottom: Layout.spacing.md,
   },
-  // --- Futuristic WLC Modal Styles ---
+  errorTextSmall: {
+    fontSize: 12,
+    marginBottom: Layout.spacing.sm,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    gap: 8,
+  },
+  buttonRowSmall: {
+    marginTop: 8,
+    gap: 6,
+  },
+  buyButton: {
+    flex: 1,
+    backgroundColor: Colors.success[500],
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  sellButton: {
+    flex: 1,
+    backgroundColor: Colors.error[500],
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  tradeButtonSmall: {
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  tradeButtonText: {
+    color: '#fff',
+    fontFamily: 'Nunito-Bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  tradeButtonTextSmall: {
+    fontSize: 14,
+  },
+  modalSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 18,
+    marginBottom: 2,
+    backgroundColor: Colors.neutral[50],
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    gap: 6,
+  },
+  modalSummaryRowSmall: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    gap: 4,
+  },
+  modalSummaryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  modalSummaryLabel: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
+    color: Colors.neutral[600],
+    textAlign: 'center',
+  },
+  modalSummaryLabelSmall: {
+    fontSize: 11,
+  },
+  modalSummaryValue: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 15,
+    color: Colors.primary[700],
+    textAlign: 'center',
+  },
+  modalSummaryValueSmall: {
+    fontSize: 13,
+  },
+  modalSummaryTime: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 13,
+    color: Colors.neutral[500],
+    textAlign: 'center',
+  },
+  modalSummaryTimeSmall: {
+    fontSize: 11,
+  },
+  cancelButton: {
+    backgroundColor: Colors.neutral[300],
+    borderRadius: Layout.borderRadius.md,
+    paddingVertical: Layout.spacing.sm,
+    marginTop: Layout.spacing.md,
+  },
+  cancelButtonSmall: {
+    paddingVertical: Layout.spacing.xs,
+    marginTop: Layout.spacing.sm,
+    borderRadius: Layout.borderRadius.sm,
+  },
+  cancelButtonText: {
+    color: Colors.neutral[700],
+    fontSize: 16,
+    textAlign: 'center',
+    fontFamily: 'Nunito-Bold',
+  },
+  cancelButtonTextSmall: {
+    fontSize: 14,
+  },
   wlcModalContent: {
-    // Gradient background workaround for RN: use two overlays for subtle effect
-    backgroundColor: '#16213e', // fallback
+    backgroundColor: '#16213e',
     borderRadius: Layout.borderRadius.lg,
     width: '90%',
+    maxWidth: 500,
     padding: Layout.spacing.xl,
     gap: Layout.spacing.md,
     borderWidth: 1.5,
     borderColor: '#38bdf8',
-    // Glowing border effect
     shadowColor: '#38bdf8',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 18,
-    // Simulate gradient with extra overlay via RN LinearGradient if available
-    // Otherwise, dark blue fallback
-    backgroundImage: undefined, // for web
-    // For native, gradient would be via react-native-linear-gradient if available
+    maxHeight: '80%',
   },
-  modalSubtitle: {
+  wlcModalContentSmall: {
+    width: '95%',
+    padding: Layout.spacing.lg,
+    borderRadius: Layout.borderRadius.md,
+    maxHeight: '85%',
+  },
+  wlcModalTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 22,
+    color: '#f8fafc',
+    textAlign: 'center',
+  },
+  wlcModalTitleSmall: {
+    fontSize: 18,
+  },
+  wlcModalSubtitle: {
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
     color: '#94a3b8',
@@ -1338,7 +1497,13 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.sm,
     letterSpacing: 0.4,
   },
-  modalDescription: {
+  wlcModalSubtitleSmall: {
+    fontSize: 14,
+  },
+  wlcModalScroll: {
+    maxHeight: 300,
+  },
+  wlcModalDescription: {
     fontFamily: 'Nunito-Regular',
     fontSize: 14,
     color: '#e2e8f0',
@@ -1346,5 +1511,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Layout.spacing.sm,
     letterSpacing: 0.1,
+  },
+  wlcModalDescriptionSmall: {
+    fontSize: 12,
+    lineHeight: 18,
   },
 });

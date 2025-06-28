@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 
@@ -10,10 +10,13 @@ interface Props {
 }
 
 export default function DashboardButton({ icon: Icon, label, onPress }: Props) {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 400;
+
   return (
-    <Pressable style={styles.button} onPress={onPress}>
-      <Icon size={24} color={Colors.primary[600]} />
-      <Text style={styles.label}>{label}</Text>
+    <Pressable style={[styles.button, isSmallScreen && styles.buttonSmall]} onPress={onPress}>
+      <Icon size={isSmallScreen ? 20 : 24} color={Colors.primary[600]} />
+      <Text style={[styles.label, isSmallScreen && styles.labelSmall]}>{label}</Text>
     </Pressable>
   );
 }
@@ -30,10 +33,18 @@ const styles = StyleSheet.create({
     gap: Layout.spacing.sm,
     ...Layout.shadows.small,
   },
+  buttonSmall: {
+    minWidth: 120,
+    padding: Layout.spacing.sm,
+    gap: Layout.spacing.xs,
+  },
   label: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 14,
     color: Colors.primary[700],
     textAlign: 'center',
+  },
+  labelSmall: {
+    fontSize: 12,
   },
 });
