@@ -10,7 +10,7 @@ import { View, ActivityIndicator, StyleSheet, Text, Platform } from 'react-nativ
 import Colors from '@/src/constants/Colors';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+import { useFrameworkReady } from '@/src/system/hooks/useFrameworkReady';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
