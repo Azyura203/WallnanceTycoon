@@ -1,7 +1,7 @@
 console.log("Loading: app/(tabs)/_layout.tsx");
 
 import { Tabs } from 'expo-router';
-import { StyleSheet, View, Text, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, Text, useWindowDimensions, Platform } from 'react-native';
 import Colors from '@/src/constants/Colors';
 import { Chrome as Home, TrendingUp, Users, Trophy, Settings, User, Calendar } from 'lucide-react-native';
 import { useTimeTracking } from '@/src/hooks/system/useTimeTracking';
@@ -12,9 +12,15 @@ import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
 export default function TabLayout() {
   const { lastVisit } = useTimeTracking();
   const { balance } = usePlayerFinances();
-  const { width } = useWindowDimensions();
-  const isSmallScreen = width < 400;
-  const isMediumScreen = width < 600;
+  const { width, height } = useWindowDimensions();
+  
+  // Enhanced responsive breakpoints
+  const isWeb = Platform.OS === 'web';
+  const isSmallMobile = width < 400;
+  const isMobile = width < 768;
+  const isTablet = width >= 768 && width < 1024;
+  const isDesktop = width >= 1024;
+  const isLargeDesktop = width >= 1440;
 
   const getDaysSinceLastVisit = () => {
     if (!lastVisit) return 0;
@@ -65,60 +71,143 @@ export default function TabLayout() {
     return `$${value.toFixed(2)}`;
   };
 
-  // Enhanced tab configuration with better spacing and adaptive design
-  const getTabBarHeight = () => {
-    if (isSmallScreen) return 65;
-    if (isMediumScreen) return 75;
-    return 85;
+  // Dynamic sizing based on platform and screen size
+  const getTabBarConfig = () => {
+    if (isDesktop) {
+      return {
+        height: isWeb ? 70 : 80,
+        iconSize: 24,
+        fontSize: 14,
+        padding: 16,
+        showLabels: true,
+        orientation: 'horizontal',
+        maxWidth: 1200,
+      };
+    } else if (isTablet) {
+      return {
+        height: 75,
+        iconSize: 22,
+        fontSize: 13,
+        padding: 12,
+        showLabels: true,
+        orientation: 'horizontal',
+        maxWidth: 800,
+      };
+    } else if (isMobile && !isSmallMobile) {
+      return {
+        height: 70,
+        iconSize: 20,
+        fontSize: 12,
+        padding: 8,
+        showLabels: true,
+        orientation: 'horizontal',
+        maxWidth: '100%',
+      };
+    } else {
+      return {
+        height: 65,
+        iconSize: 18,
+        fontSize: 10,
+        padding: 6,
+        showLabels: false, // Hide labels on very small screens
+        orientation: 'horizontal',
+        maxWidth: '100%',
+      };
+    }
   };
 
-  const getIconSize = () => {
-    if (isSmallScreen) return 18;
-    if (isMediumScreen) return 22;
-    return 24;
+  const config = getTabBarConfig();
+
+  // Tab configuration with responsive labels
+  const getTabTitle = (fullTitle: string, shortTitle: string) => {
+    if (isSmallMobile) return shortTitle;
+    if (isMobile && fullTitle.length > 8) return shortTitle;
+    return fullTitle;
+  };
+
+  const tabScreenOptions = {
+    tabBarActiveTintColor: Colors.primary[600],
+    tabBarInactiveTintColor: Colors.neutral[400],
+    tabBarStyle: [
+      styles.tabBar,
+      {
+        height: config.height,
+        paddingHorizontal: config.padding,
+        paddingTop: config.padding / 2,
+        paddingBottom: isWeb ? config.padding / 2 : Math.max(config.padding / 2, 6),
+        maxWidth: config.maxWidth,
+        alignSelf: 'center',
+        width: isDesktop ? 'auto' : '100%',
+        borderTopWidth: isWeb ? 1 : 0.5,
+        shadowOpacity: isWeb ? 0.15 : 0.1,
+        elevation: isWeb ? 8 : 10,
+      },
+      isWeb && styles.tabBarWeb,
+      isDesktop && styles.tabBarDesktop,
+      isTablet && styles.tabBarTablet,
+    ],
+    tabBarLabelStyle: [
+      styles.tabBarLabel,
+      {
+        fontSize: config.fontSize,
+        marginTop: config.showLabels ? 2 : 0,
+        display: config.showLabels ? 'flex' : 'none',
+      },
+    ],
+    tabBarItemStyle: [
+      styles.tabBarItem,
+      {
+        paddingVertical: config.padding / 2,
+        paddingHorizontal: isDesktop ? 12 : config.padding / 2,
+        minHeight: config.height - config.padding,
+        flex: isDesktop ? 0 : 1,
+        minWidth: isDesktop ? 80 : 'auto',
+      },
+    ],
+    headerShown: false,
+    tabBarHideOnKeyboard: true,
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={[styles.playTimeOverlay, isSmallScreen && styles.playTimeOverlaySmall]}>
-        <Text style={[styles.playTimeText, isSmallScreen && styles.playTimeTextSmall]}>
+      {/* Enhanced Stats Overlay - Responsive positioning */}
+      <View style={[
+        styles.playTimeOverlay,
+        {
+          top: isWeb ? 16 : 12,
+          right: isWeb ? 16 : 12,
+          paddingHorizontal: isDesktop ? 16 : isTablet ? 12 : 8,
+          paddingVertical: isDesktop ? 8 : isTablet ? 6 : 4,
+          borderRadius: isDesktop ? 16 : 12,
+        }
+      ]}>
+        <Text style={[
+          styles.playTimeText,
+          {
+            fontSize: isDesktop ? 16 : isTablet ? 14 : 12,
+          }
+        ]}>
           {getFormattedTime()} · {formatMoney(balance)}
         </Text>
       </View>
-      <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: Colors.primary[600],
-          tabBarInactiveTintColor: Colors.neutral[400],
-          tabBarStyle: [
-            styles.tabBar, 
-            { height: getTabBarHeight() },
-            isSmallScreen && styles.tabBarSmall,
-            isMediumScreen && styles.tabBarMedium
-          ],
-          tabBarLabelStyle: [
-            styles.tabBarLabel, 
-            isSmallScreen && styles.tabBarLabelSmall,
-            isMediumScreen && styles.tabBarLabelMedium
-          ],
-          tabBarItemStyle: [
-            styles.tabBarItem, 
-            isSmallScreen && styles.tabBarItemSmall,
-            isMediumScreen && styles.tabBarItemMedium
-          ],
-          headerShown: false,
-          tabBarHideOnKeyboard: true, // Hide tab bar when keyboard is open
-        }}>
+
+      <Tabs screenOptions={tabScreenOptions}>
         <Tabs.Screen
           name="index"
           options={{
-            title: isSmallScreen ? 'Home' : 'Dashboard',
+            title: getTabTitle('Dashboard', 'Home'),
             tabBarIcon: ({ color, focused }) => (
               <View style={[
                 styles.tabIconContainer,
                 focused && styles.tabIconContainerActive,
-                isSmallScreen && styles.tabIconContainerSmall
+                {
+                  padding: isDesktop ? 8 : isTablet ? 6 : 4,
+                  borderRadius: isDesktop ? 12 : 8,
+                  minWidth: isDesktop ? 40 : 32,
+                  minHeight: isDesktop ? 40 : 32,
+                }
               ]}>
-                <Home color={color} size={getIconSize()} />
+                <Home color={color} size={config.iconSize} />
               </View>
             ),
           }}
@@ -126,14 +215,19 @@ export default function TabLayout() {
         <Tabs.Screen
           name="market"
           options={{
-            title: 'Market',
+            title: getTabTitle('Market', 'Market'),
             tabBarIcon: ({ color, focused }) => (
               <View style={[
                 styles.tabIconContainer,
                 focused && styles.tabIconContainerActive,
-                isSmallScreen && styles.tabIconContainerSmall
+                {
+                  padding: isDesktop ? 8 : isTablet ? 6 : 4,
+                  borderRadius: isDesktop ? 12 : 8,
+                  minWidth: isDesktop ? 40 : 32,
+                  minHeight: isDesktop ? 40 : 32,
+                }
               ]}>
-                <TrendingUp color={color} size={getIconSize()} />
+                <TrendingUp color={color} size={config.iconSize} />
               </View>
             ),
           }}
@@ -141,14 +235,19 @@ export default function TabLayout() {
         <Tabs.Screen
           name="portfolio"
           options={{
-            title: isSmallScreen ? 'Assets' : 'Portfolio',
+            title: getTabTitle('Portfolio', 'Assets'),
             tabBarIcon: ({ color, focused }) => (
               <View style={[
                 styles.tabIconContainer,
                 focused && styles.tabIconContainerActive,
-                isSmallScreen && styles.tabIconContainerSmall
+                {
+                  padding: isDesktop ? 8 : isTablet ? 6 : 4,
+                  borderRadius: isDesktop ? 12 : 8,
+                  minWidth: isDesktop ? 40 : 32,
+                  minHeight: isDesktop ? 40 : 32,
+                }
               ]}>
-                <Users color={color} size={getIconSize()} />
+                <Users color={color} size={config.iconSize} />
               </View>
             ),
           }}
@@ -156,14 +255,19 @@ export default function TabLayout() {
         <Tabs.Screen
           name="LearnAndEarn"
           options={{
-            title: isSmallScreen ? 'Learn' : 'Learn & Earn',
+            title: getTabTitle('Learn & Earn', 'Learn'),
             tabBarIcon: ({ color, focused }) => (
               <View style={[
                 styles.tabIconContainer,
                 focused && styles.tabIconContainerActive,
-                isSmallScreen && styles.tabIconContainerSmall
+                {
+                  padding: isDesktop ? 8 : isTablet ? 6 : 4,
+                  borderRadius: isDesktop ? 12 : 8,
+                  minWidth: isDesktop ? 40 : 32,
+                  minHeight: isDesktop ? 40 : 32,
+                }
               ]}>
-                <Trophy color={color} size={getIconSize()} />
+                <Trophy color={color} size={config.iconSize} />
               </View>
             ),
           }}
@@ -171,14 +275,19 @@ export default function TabLayout() {
         <Tabs.Screen
           name="events"
           options={{
-            title: 'Events',
+            title: getTabTitle('Events', 'Events'),
             tabBarIcon: ({ color, focused }) => (
               <View style={[
                 styles.tabIconContainer,
                 focused && styles.tabIconContainerActive,
-                isSmallScreen && styles.tabIconContainerSmall
+                {
+                  padding: isDesktop ? 8 : isTablet ? 6 : 4,
+                  borderRadius: isDesktop ? 12 : 8,
+                  minWidth: isDesktop ? 40 : 32,
+                  minHeight: isDesktop ? 40 : 32,
+                }
               ]}>
-                <Calendar color={color} size={getIconSize()} />
+                <Calendar color={color} size={config.iconSize} />
               </View>
             ),
           }}
@@ -186,14 +295,19 @@ export default function TabLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: 'Profile',
+            title: getTabTitle('Profile', 'Profile'),
             tabBarIcon: ({ color, focused }) => (
               <View style={[
                 styles.tabIconContainer,
                 focused && styles.tabIconContainerActive,
-                isSmallScreen && styles.tabIconContainerSmall
+                {
+                  padding: isDesktop ? 8 : isTablet ? 6 : 4,
+                  borderRadius: isDesktop ? 12 : 8,
+                  minWidth: isDesktop ? 40 : 32,
+                  minHeight: isDesktop ? 40 : 32,
+                }
               ]}>
-                <User color={color} size={getIconSize()} />
+                <User color={color} size={config.iconSize} />
               </View>
             ),
           }}
@@ -201,14 +315,19 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: isSmallScreen ? 'More' : 'Settings',
+            title: getTabTitle('Settings', 'More'),
             tabBarIcon: ({ color, focused }) => (
               <View style={[
                 styles.tabIconContainer,
                 focused && styles.tabIconContainerActive,
-                isSmallScreen && styles.tabIconContainerSmall
+                {
+                  padding: isDesktop ? 8 : isTablet ? 6 : 4,
+                  borderRadius: isDesktop ? 12 : 8,
+                  minWidth: isDesktop ? 40 : 32,
+                  minHeight: isDesktop ? 40 : 32,
+                }
               ]}>
-                <Settings color={color} size={getIconSize()} />
+                <Settings color={color} size={config.iconSize} />
               </View>
             ),
           }}
@@ -222,73 +341,50 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.card,
     borderTopColor: Colors.border,
-    borderTopWidth: 0.5,
-    paddingTop: 8,
-    paddingBottom: 6,
-    paddingHorizontal: 4,
     justifyContent: 'space-around',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 10,
+    position: Platform.OS === 'web' ? 'relative' : 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
-  tabBarSmall: {
-    paddingTop: 6,
-    paddingBottom: 4,
-    paddingHorizontal: 2,
+  tabBarWeb: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.15)',
   },
-  tabBarMedium: {
-    paddingTop: 7,
-    paddingBottom: 5,
-    paddingHorizontal: 3,
+  tabBarDesktop: {
+    borderRadius: 16,
+    marginHorizontal: 24,
+    marginBottom: 16,
+    borderTopWidth: 1,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+  },
+  tabBarTablet: {
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderTopWidth: 1,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   tabBarLabel: {
     fontFamily: 'Nunito-SemiBold',
-    fontSize: 11,
-    marginTop: 2,
-    marginBottom: 0,
     textAlign: 'center',
-  },
-  tabBarLabelSmall: {
-    fontSize: 9,
-    marginTop: 1,
-  },
-  tabBarLabelMedium: {
-    fontSize: 10,
-    marginTop: 1.5,
+    marginBottom: 0,
   },
   tabBarItem: {
-    minHeight: 50,
-    paddingVertical: 2,
-    paddingHorizontal: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-  },
-  tabBarItemSmall: {
-    minHeight: 45,
-    paddingVertical: 1,
-    paddingHorizontal: 0.5,
-  },
-  tabBarItemMedium: {
-    minHeight: 48,
-    paddingVertical: 1.5,
-    paddingHorizontal: 0.75,
   },
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
-    padding: 6,
-    minWidth: 32,
-    minHeight: 32,
-  },
-  tabIconContainerSmall: {
-    padding: 4,
-    borderRadius: 12,
-    minWidth: 24,
-    minHeight: 24,
+    transition: Platform.OS === 'web' ? 'all 0.2s ease' : undefined,
   },
   tabIconContainerActive: {
     backgroundColor: Colors.primary[100],
@@ -296,15 +392,9 @@ const styles = StyleSheet.create({
   },
   playTimeOverlay: {
     position: 'absolute',
-    top: 12,
-    right: 12,
     backgroundColor: Colors.secondary?.[500] || Colors.accent[500],
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
     zIndex: 999,
     flexDirection: 'row',
-    gap: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -312,22 +402,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
-  },
-  playTimeOverlaySmall: {
-    top: 8,
-    right: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 8,
+    ...(Platform.OS === 'web' && {
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+    }),
   },
   playTimeText: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 14,
     color: 'white',
     textAlign: 'center',
-  },
-  playTimeTextSmall: {
-    fontSize: 12,
   },
 });
