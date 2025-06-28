@@ -3,14 +3,13 @@ console.log("Loading: app/_layout.tsx");
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useFrameworkReady } from '@/src/hooks/system/useFrameworkReady';
+import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts } from 'expo-font';
 import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { View, ActivityIndicator, StyleSheet, Text, Platform } from 'react-native';
 import Colors from '@/src/constants/Colors';
 import * as SplashScreen from 'expo-splash-screen';
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { useFrameworkReady } from '@/src/system/hooks/useFrameworkReady';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
