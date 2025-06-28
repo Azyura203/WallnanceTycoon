@@ -275,7 +275,17 @@ export function useMarketPrices() {
         const response = await fetch(
           'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,dogecoin,tether,uniswap,solana,binancecoin,wrapped-bitcoin,chainlink,polkadot,shiba-inu,tron,avalanche-2'
         );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid API response format');
+        }
+        
         const priceMap: Record<string, any> = {};
         data.forEach((d: any) => {
           priceMap[d.id] = d;
@@ -327,7 +337,8 @@ export function useMarketPrices() {
           return updated;
         });
       } catch (error) {
-        console.error('Failed to fetch CoinGecko data', error);
+        console.warn('Failed to fetch CoinGecko data, using simulated data instead:', error);
+        // Continue with simulated data instead of throwing error
       }
     };
 

@@ -173,12 +173,45 @@ export function useCompanyShares(): Share[] {
 
     const fetchRealData = async () => {
       try {
+        // Check if we have a valid API key (not the placeholder)
+        const apiKey = 'API_KEY565X10UZ8IFEROWT0YJZ5Q7NHE652NIM';
+        if (apiKey === 'API_KEY565X10UZ8IFEROWT0YJZ5Q7NHE652NIM') {
+          console.warn('Using placeholder API key. Real stock data will not be available. Please obtain a valid API key from financialmodelingprep.com');
+          // Continue with simulated data instead of making API call
+          const updatedShares = fictionalShares.map(share => {
+            const fluctuation = (Math.random() - 0.5) * 5;
+            const newPrice = +(share.price + fluctuation).toFixed(2);
+            const newChange = +((fluctuation / share.price) * 100).toFixed(2);
+            const newDirection: "up" | "down" | "same" = newChange > 0 ? "up" : newChange < 0 ? "down" : "same";
+            
+            return {
+              ...share,
+              price: newPrice,
+              current_price: newPrice,
+              change: newChange,
+              direction: newDirection,
+              total_volume: 100000,
+              volume24h: 100000,
+              high24h: newPrice + 5,
+              low24h: newPrice - 5,
+              priceChangePercentage24h: newChange,
+            };
+          });
+          setShares(updatedShares);
+          return;
+        }
+
         const symbols = Object.values(realSymbolMap).join(',');
         const res = await fetch(
-          `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=API_KEY565X10UZ8IFEROWT0YJZ5Q7NHE652NIM`
+          `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=${apiKey}`
         );
         
         if (!res.ok) {
+          if (res.status === 401) {
+            console.warn('API key is invalid or expired. Using simulated data instead.');
+          } else {
+            console.warn(`API request failed with status ${res.status}. Using simulated data instead.`);
+          }
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         
@@ -186,8 +219,8 @@ export function useCompanyShares(): Share[] {
 
         // Check if data is an array and not an error object
         if (!Array.isArray(data)) {
-          console.warn('API returned non-array data, using fictional data instead');
-          return;
+          console.warn('API returned non-array data, using simulated data instead');
+          throw new Error('Invalid API response format');
         }
 
         const symbolData: Record<string, any> = {};
@@ -223,7 +256,7 @@ export function useCompanyShares(): Share[] {
 
         setShares(updated as Share[]);
       } catch (error) {
-        console.error('Failed to fetch real stock data', error);
+        console.warn('Failed to fetch real stock data, using simulated data instead:', error);
         // Continue using fictional data with simulated fluctuations
         const updatedShares = fictionalShares.map(share => {
           const fluctuation = (Math.random() - 0.5) * 5;
