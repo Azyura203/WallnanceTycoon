@@ -1,6 +1,94 @@
-# 📦 Wallnance Tycoon – Version 1.2.0
+# 📦 Wallnance Tycoon – Changelog
 
-**Release Date:** 2025-06-16
+## [v1.7.0] - 2025-01-XX
+
+### 🎉 Major Release - Complete Gamification System
+
+This is the biggest update yet! Wallnance Tycoon now features a complete gamification system with events, achievements, and enhanced learning.
+
+#### ✨ New Features
+
+**🏆 Achievement System**
+- 25+ achievements across 5 categories (Trading, Learning, Portfolio, Social, Milestone)
+- Rarity system: Common, Rare, Epic, Legendary
+- Smart progress tracking with automatic unlock detection
+- Reward system: Points, coins, badges, and special unlocks
+- Beautiful animated notifications for new achievements
+
+**🎯 Events & Challenges System**
+- Dynamic market events: Crypto Winter, Meme Mania, Learning Week
+- Real-time event effects: Price multipliers, fee discounts, bonus rewards
+- Daily challenges: Trade volume, profit targets, lesson completion
+- Event calendar with active, upcoming, and completed events
+- Events tab for tracking all activities
+
+**📚 Enhanced Learning System**
+- Learning quests with multi-lesson courses
+- Interactive lesson modal with different content types
+- Progress tracking for courses and individual lessons
+- Daily challenges integrated with learning goals
+- Skill-based rewards and achievement integration
+
+**👤 Comprehensive Profile System**
+- Player statistics: Trading performance, learning progress
+- Level & XP system based on points earned
+- Achievement gallery with visual showcase
+- Badge collection for major accomplishments
+- Detailed trading and learning statistics
+
+**📅 Events Tab**
+- Live event tracking with countdown timers
+- Challenge progress monitoring
+- Event history and rewards earned
+- Beautiful card-based UI for events and challenges
+
+#### 🎨 UI/UX Improvements
+- **Responsive Design**: Optimized for all screen sizes (small phones to tablets)
+- **Animations**: Smooth transitions and micro-interactions
+- **Color System**: Consistent rarity-based color coding
+- **Progress Indicators**: Visual progress bars throughout the app
+- **Tab Navigation**: Better organization of features
+
+#### 🧠 Game Mechanics
+- **Event Multipliers**: Market events affect coin prices in real-time
+- **Trading Discounts**: Fee reductions during special events
+- **Achievement Rewards**: Points, coins, and unlocks for completing goals
+- **Daily Challenges**: Fresh objectives every day
+- **Learning Streaks**: Consecutive day bonuses
+- **Player Progression**: XP-based leveling system
+
+#### 🔧 Technical Enhancements
+- **State Management**: Enhanced Zustand integration
+- **Data Persistence**: Comprehensive AsyncStorage usage
+- **Real-time Updates**: Event status and challenge progress
+- **Error Handling**: Robust error management throughout
+- **Performance**: Optimized rendering and data loading
+
+#### 🎮 Gameplay Features
+- **Smart Notifications**: Achievement unlocks with beautiful animations
+- **Interactive Lessons**: Different lesson types (text, interactive, simulation)
+- **Challenge Tracking**: Real-time progress on daily objectives
+- **Event Effects**: Market events actually impact gameplay
+- **Reward System**: Multiple reward types for different achievements
+
+### 🐛 Bug Fixes
+- Fixed API error handling for stock data
+- Improved CoinGecko API integration with fallbacks
+- Enhanced error messages and user feedback
+- Fixed responsive layout issues on small screens
+
+### 🔄 Breaking Changes
+- Added new tabs to navigation (Events, Profile)
+- Enhanced data structure for player statistics
+- New achievement and event storage systems
+
+### 📱 Mobile Optimizations
+- Better touch targets for small screens
+- Optimized text sizes and spacing
+- Improved modal and popup layouts
+- Enhanced scrolling performance
+
+---
 
 ## [v1.6.0] - 2025-06-24
 
@@ -38,18 +126,29 @@
 
 ---
 
-🛠️ Next version will focus on:
-- Trading pair logic
-- AI bots or player competition
-- Leaderboard, rewards, and advanced tokenomics
+## [1.5.0] - 2025-06-23
 
-## [1.3.0] - 2025-06-16
-### Changed
-- Refactored entire project structure under `src/`
-- Added alias paths for cleaner imports
-- Grouped components, hooks, and assets by domain
+### ✨ Added
+- AI Difficulty setting now works and saves properly.
+- Username display and edit modal integrated (uses existing companyName hook).
+- Clean new UI for username editing — borderless input, user icon, and modern modal style.
+- Owner and logo display in Competitor Market for more realism.
 
-# 📦 Wallnance Tycoon Changelog
+### 🔧 Changed
+- Rewrote "How to Play" modal content to reflect individual player experience (not company-based).
+- Refactored input modals for compact, centered layouts with proper padding.
+- Updated Competitor Market UI: added price formatting, emoji logo support, and owner labels.
+
+### ❌ Removed
+- "Market Speed" and "Coin Volatility" settings (conflicted with real API logic).
+- "Emoji Mode" setting (no longer relevant).
+- "Company Name" concept — fully transitioned to individual user mode.
+
+### 🐛 Fixed
+- Layout spacing issues in settings and modal screens.
+- Full-screen modal rendering now scales better on various devices.
+
+---
 
 ## [1.4.0] - 2025-06-16
 
@@ -76,26 +175,16 @@
 ### Changed
 - Removed SparkLine chart display from market view for cleaner UI and layout testing.
 
-## [v1.5.0] - 2025-06-23
-
-### ✨ Added
-- AI Difficulty setting now works and saves properly.
-- Username display and edit modal integrated (uses existing companyName hook).
-- Clean new UI for username editing — borderless input, user icon, and modern modal style.
-- Owner and logo display in Competitor Market for more realism.
-
-### 🔧 Changed
-- Rewrote "How to Play" modal content to reflect individual player experience (not company-based).
-- Refactored input modals for compact, centered layouts with proper padding.
-- Updated Competitor Market UI: added price formatting, emoji logo support, and owner labels.
-
-### ❌ Removed
-- "Market Speed" and "Coin Volatility" settings (conflicted with real API logic).
-- "Emoji Mode" setting (no longer relevant).
-- "Company Name" concept — fully transitioned to individual user mode.
-
-### 🐛 Fixed
-- Layout spacing issues in settings and modal screens.
-- Full-screen modal rendering now scales better on various devices.
+## [1.3.0] - 2025-06-16
+### Changed
+- Refactored entire project structure under `src/`
+- Added alias paths for cleaner imports
+- Grouped components, hooks, and assets by domain
 
 ---
+
+🛠️ **Next version will focus on:**
+- Advanced trading features and market analysis tools
+- Social features and leaderboards
+- Enhanced monetization and premium features
+- Real-world integration possibilities

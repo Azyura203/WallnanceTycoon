@@ -1,346 +1,822 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, useWindowDimensions } from 'react-native';
+import { BookOpen, Trophy, Target, Clock, CheckCircle, Star } from 'lucide-react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
-import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
-
-const tradingLessons = [
-  { title: 'What is Trading?', content: 'Trading is the act of buying and selling assets to make a profit. Prices can change rapidly, so timing and strategy are key.' },
-  { title: 'Bull vs Bear Markets', content: 'A bull market means prices are rising. A bear market means prices are falling. Both have opportunities for gain!' },
-  { title: 'Day Trading Tips', content: 'Day trading is fast-paced. Set stop-losses, follow trends, and never invest more than you can afford to lose.' },
-];
-
-const investingLessons = [
-  { title: 'What is Investing?', content: 'Investing is about holding assets long-term. It focuses on gradual growth and compounding returns.' },
-  { title: 'Diversification', content: 'Don\'t put all your eggs in one basket. Spread your investments across different asset types to reduce risk.' },
-  { title: 'Compounding Magic', content: 'Reinvesting your profits over time can lead to exponential growth. Patience pays off!' },
-];
-
-const tokenomicsLessons = [
-  { title: 'What is Tokenomics?', content: 'Tokenomics is the science of a token\'s economy—how supply, demand, and utility shape its value.' },
-  { title: 'Total Supply vs Circulating Supply', content: 'Total supply is the max a token can have. Circulating is what\'s currently in the market. Circulating supply affects price action heavily.' },
-  { title: 'Burning & Inflation', content: 'Burning reduces supply (often bullish). Inflation increases supply (can be bearish). Both shape a token\'s future.' },
-];
-
-const cryptoLessons = [
-  { title: 'The Birth of Crypto', content: 'In 2008, Satoshi Nakamoto introduced Bitcoin, a decentralized digital currency powered by blockchain.' },
-  { title: 'Satoshi Nakamoto', content: 'The mysterious figure behind Bitcoin. Satoshi\'s vision was a financial system without intermediaries—trustless and transparent.' },
-  { title: 'Genesis Block', content: 'The first block of Bitcoin was mined in 2009. It contained a hidden message referencing a bailout, symbolizing distrust in traditional banking.' },
-];
+import { useLearningSystem } from '@/src/hooks/useLearningSystem';
+import { useAchievements } from '@/src/hooks/useAchievements';
+import { LearningQuest, LearningLesson } from '@/src/types/game';
+import LessonModal from '@/src/components/learning/LessonModal';
+import AchievementNotification from '@/src/components/notifications/AchievementNotification';
 
 export default function LearnAndEarnScreen() {
-  const { balance, portfolio, buyFromMarket } = usePlayerFinances();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 400;
   
-  const [selectedTab, setSelectedTab] = useState<'trading' | 'investing' | 'tokenomics' | 'crypto'>('trading');
-  const [selectedLesson, setSelectedLesson] = useState<{ title: string, content: string } | null>(null);
+  const {
+    quests,
+    dailyChallenges,
+    streakDays,
+    totalLessonsCompleted,
+    completeLesson,
+    completeQuiz,
+    getQuestsByCategory,
+    getCompletedQuests,
+  } = useLearningSystem();
+  
+  const { checkAchievement } = useAchievements();
+  
+  const [selectedTab, setSelectedTab] = useState<'quests' | 'challenges' | 'progress'>('quests');
+  const [selectedQuest, setSelectedQuest] = useState<LearningQuest | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<LearningLesson | null>(null);
+  const [showLessonModal, setShowLessonModal] = useState(false);
+  const [newAchievement, setNewAchievement] = useState<any>(null);
 
-  const lessons = selectedTab === 'trading'
-    ? tradingLessons
-    : selectedTab === 'investing'
-    ? investingLessons
-    : selectedTab === 'tokenomics'
-    ? tokenomicsLessons
-    : cryptoLessons;
+  const handleLessonPress = (quest: LearningQuest, lesson: LearningLesson) => {
+    setSelectedQuest(quest);
+    setSelectedLesson(lesson);
+    setShowLessonModal(true);
+  };
 
-  return (
-    <View style={{ flex: 1, backgroundColor: '#F6F3FF' }}>
-      <View style={[styles.header, isSmallScreen && styles.headerSmall]}>
-        <Text style={[styles.title, isSmallScreen && styles.titleSmall]}>📚 Learn & Earn 💰</Text>
-        <Text style={[styles.subtitle, isSmallScreen && styles.subtitleSmall]}>
-          Discover the chaos of trading. Learn fast. Earn smart.
-        </Text>
-      </View>
+  const handleLessonComplete = async (lessonId: string) => {
+    if (!selectedQuest) return;
+    
+    try {
+      await completeLesson(selectedQuest.id, lessonId);
       
-      <View style={[styles.tipContainer, isSmallScreen && styles.tipContainerSmall]}>
-        <Text style={[styles.tipTitle, isSmallScreen && styles.tipTitleSmall]}>Tip of the Day 💡</Text>
-        <Text style={[styles.tipText, isSmallScreen && styles.tipTextSmall]}>
-          Markets move fast. Diversify your strategy across all tabs to master the game.
-        </Text>
-      </View>
+      // Check for achievements
+      const newAchievements = await checkAchievement('lesson', totalLessonsCompleted + 1);
+      if (newAchievements.length > 0) {
+        setNewAchievement(newAchievements[0]);
+      }
+      
+      setShowLessonModal(false);
+    } catch (error) {
+      console.error('Error completing lesson:', error);
+    }
+  };
 
-      <View style={[styles.tabContainer, isSmallScreen && styles.tabContainerSmall]}>
-        <TouchableOpacity 
-          style={[styles.tab, selectedTab === 'trading' && styles.activeTab, isSmallScreen && styles.tabSmall]} 
-          onPress={() => setSelectedTab('trading')}
-        >
-          <Text style={[styles.tabText, selectedTab === 'trading' && styles.activeTabText, isSmallScreen && styles.tabTextSmall]}>
-            Trading
+  const QuestCard = ({ quest }: { quest: LearningQuest }) => (
+    <View style={[styles.questCard, isSmallScreen && styles.questCardSmall]}>
+      <View style={styles.questHeader}>
+        <View style={styles.questTitleRow}>
+          <Text style={[styles.questTitle, isSmallScreen && styles.questTitleSmall]}>
+            {quest.title}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, selectedTab === 'investing' && styles.activeTab, isSmallScreen && styles.tabSmall]} 
-          onPress={() => setSelectedTab('investing')}
-        >
-          <Text style={[styles.tabText, selectedTab === 'investing' && styles.activeTabText, isSmallScreen && styles.tabTextSmall]}>
-            Investing
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, selectedTab === 'tokenomics' && styles.activeTab, isSmallScreen && styles.tabSmall]} 
-          onPress={() => setSelectedTab('tokenomics')}
-        >
-          <Text style={[styles.tabText, selectedTab === 'tokenomics' && styles.activeTabText, isSmallScreen && styles.tabTextSmall]}>
-            {isSmallScreen ? 'Token' : 'Tokenomics'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, selectedTab === 'crypto' && styles.activeTab, isSmallScreen && styles.tabSmall]} 
-          onPress={() => setSelectedTab('crypto')}
-        >
-          <Text style={[styles.tabText, selectedTab === 'crypto' && styles.activeTabText, isSmallScreen && styles.tabTextSmall]}>
-            Crypto 🧑‍💻
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={[styles.lessonList, isSmallScreen && styles.lessonListSmall]}>
-        {lessons.map((lesson, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[styles.lessonCard, isSmallScreen && styles.lessonCardSmall]}
-            onPress={() => setSelectedLesson(lesson)}
-          >
-            <Text style={[styles.lessonTitle, isSmallScreen && styles.lessonTitleSmall]}>
-              {lesson.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <Modal
-        visible={!!selectedLesson}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setSelectedLesson(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, isSmallScreen && styles.modalContentSmall]}>
-            <Text style={[styles.modalTitle, isSmallScreen && styles.modalTitleSmall]}>
-              {selectedLesson?.title}
-            </Text>
-            <Text style={[styles.modalText, isSmallScreen && styles.modalTextSmall]}>
-              {selectedLesson?.content}
-            </Text>
-            <TouchableOpacity 
-              onPress={() => setSelectedLesson(null)} 
-              style={[styles.closeButton, isSmallScreen && styles.closeButtonSmall]}
-            >
-              <Text style={[styles.closeButtonText, isSmallScreen && styles.closeButtonTextSmall]}>
-                Got it!
-              </Text>
-            </TouchableOpacity>
-            <Text style={[styles.tributeText, isSmallScreen && styles.tributeTextSmall]}>
-              🚀 Tribute to Satoshi: Keep learning. The future is decentralized!
+          <View style={[
+            styles.categoryBadge,
+            { backgroundColor: getCategoryColor(quest.category) },
+            isSmallScreen && styles.categoryBadgeSmall
+          ]}>
+            <Text style={[styles.categoryText, isSmallScreen && styles.categoryTextSmall]}>
+              {quest.category.toUpperCase()}
             </Text>
           </View>
         </View>
-      </Modal>
+        {quest.completed && (
+          <View style={[styles.completedBadge, isSmallScreen && styles.completedBadgeSmall]}>
+            <CheckCircle size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
+          </View>
+        )}
+      </View>
+      
+      <Text style={[styles.questDescription, isSmallScreen && styles.questDescriptionSmall]}>
+        {quest.description}
+      </Text>
+      
+      {/* Progress Bar */}
+      <View style={[styles.progressContainer, isSmallScreen && styles.progressContainerSmall]}>
+        <View style={[styles.progressBar, isSmallScreen && styles.progressBarSmall]}>
+          <View 
+            style={[
+              styles.progressFill,
+              { width: `${quest.progress}%` }
+            ]} 
+          />
+        </View>
+        <Text style={[styles.progressText, isSmallScreen && styles.progressTextSmall]}>
+          {quest.progress}%
+        </Text>
+      </View>
+      
+      {/* Lessons */}
+      <View style={[styles.lessonsContainer, isSmallScreen && styles.lessonsContainerSmall]}>
+        {quest.lessons.map((lesson, index) => (
+          <TouchableOpacity
+            key={lesson.id}
+            style={[
+              styles.lessonItem,
+              lesson.completed && styles.lessonItemCompleted,
+              isSmallScreen && styles.lessonItemSmall
+            ]}
+            onPress={() => handleLessonPress(quest, lesson)}
+          >
+            <View style={styles.lessonInfo}>
+              <Text style={[
+                styles.lessonTitle,
+                lesson.completed && styles.lessonTitleCompleted,
+                isSmallScreen && styles.lessonTitleSmall
+              ]}>
+                {index + 1}. {lesson.title}
+              </Text>
+              <View style={styles.lessonMeta}>
+                <Clock size={isSmallScreen ? 12 : 14} color={Colors.neutral[500]} />
+                <Text style={[styles.lessonTime, isSmallScreen && styles.lessonTimeSmall]}>
+                  {lesson.estimatedTime} min
+                </Text>
+              </View>
+            </View>
+            {lesson.completed && (
+              <CheckCircle size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+      
+      {/* Rewards */}
+      <View style={[styles.rewardsContainer, isSmallScreen && styles.rewardsContainerSmall]}>
+        <Text style={[styles.rewardsTitle, isSmallScreen && styles.rewardsTitleSmall]}>
+          Rewards:
+        </Text>
+        <Text style={[styles.rewardsText, isSmallScreen && styles.rewardsTextSmall]}>
+          {quest.rewards.points} points • ${quest.rewards.coins.toLocaleString()}
+          {quest.rewards.achievement && ` • ${quest.rewards.achievement} achievement`}
+        </Text>
+      </View>
+    </View>
+  );
+
+  const getCategoryColor = (category: LearningQuest['category']) => {
+    switch (category) {
+      case 'beginner': return Colors.success[500];
+      case 'intermediate': return Colors.warning[500];
+      case 'advanced': return Colors.error[500];
+      default: return Colors.neutral[500];
+    }
+  };
+
+  const ChallengeCard = ({ challenge }: { challenge: any }) => (
+    <View style={[
+      styles.challengeCard,
+      challenge.completed && styles.challengeCardCompleted,
+      isSmallScreen && styles.challengeCardSmall
+    ]}>
+      <View style={styles.challengeHeader}>
+        <Text style={[styles.challengeEmoji, isSmallScreen && styles.challengeEmojiSmall]}>
+          {challenge.emoji}
+        </Text>
+        <View style={styles.challengeInfo}>
+          <Text style={[styles.challengeTitle, isSmallScreen && styles.challengeTitleSmall]}>
+            {challenge.title}
+          </Text>
+          <Text style={[styles.challengeDescription, isSmallScreen && styles.challengeDescriptionSmall]}>
+            {challenge.description}
+          </Text>
+        </View>
+        {challenge.completed && (
+          <View style={[styles.completedBadge, isSmallScreen && styles.completedBadgeSmall]}>
+            <CheckCircle size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
+          </View>
+        )}
+      </View>
+      
+      {/* Progress */}
+      <View style={[styles.progressContainer, isSmallScreen && styles.progressContainerSmall]}>
+        <View style={[styles.progressBar, isSmallScreen && styles.progressBarSmall]}>
+          <View 
+            style={[
+              styles.progressFill,
+              { width: `${Math.min((challenge.progress / challenge.target) * 100, 100)}%` }
+            ]} 
+          />
+        </View>
+        <Text style={[styles.progressText, isSmallScreen && styles.progressTextSmall]}>
+          {challenge.progress}/{challenge.target}
+        </Text>
+      </View>
+      
+      {/* Reward */}
+      <View style={[styles.challengeReward, isSmallScreen && styles.challengeRewardSmall]}>
+        <Text style={[styles.rewardText, isSmallScreen && styles.rewardTextSmall]}>
+          Reward: {challenge.reward.points} points, ${challenge.reward.coins.toLocaleString()}
+        </Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+        {/* Header */}
+        <View style={[styles.header, isSmallScreen && styles.headerSmall]}>
+          <Text style={[styles.title, isSmallScreen && styles.titleSmall]}>Learn & Earn</Text>
+          <Text style={[styles.subtitle, isSmallScreen && styles.subtitleSmall]}>
+            Master trading skills and earn rewards
+          </Text>
+          
+          {/* Stats */}
+          <View style={[styles.statsContainer, isSmallScreen && styles.statsContainerSmall]}>
+            <View style={[styles.statItem, isSmallScreen && styles.statItemSmall]}>
+              <BookOpen size={isSmallScreen ? 16 : 20} color={Colors.primary[500]} />
+              <Text style={[styles.statValue, isSmallScreen && styles.statValueSmall]}>
+                {totalLessonsCompleted}
+              </Text>
+              <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>
+                Lessons
+              </Text>
+            </View>
+            <View style={[styles.statItem, isSmallScreen && styles.statItemSmall]}>
+              <Trophy size={isSmallScreen ? 16 : 20} color={Colors.warning[500]} />
+              <Text style={[styles.statValue, isSmallScreen && styles.statValueSmall]}>
+                {getCompletedQuests().length}
+              </Text>
+              <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>
+                Quests
+              </Text>
+            </View>
+            <View style={[styles.statItem, isSmallScreen && styles.statItemSmall]}>
+              <Star size={isSmallScreen ? 16 : 20} color={Colors.accent[500]} />
+              <Text style={[styles.statValue, isSmallScreen && styles.statValueSmall]}>
+                {streakDays}
+              </Text>
+              <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>
+                Streak
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Tab Navigation */}
+        <View style={[styles.tabContainer, isSmallScreen && styles.tabContainerSmall]}>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              selectedTab === 'quests' && styles.activeTab,
+              isSmallScreen && styles.tabSmall
+            ]}
+            onPress={() => setSelectedTab('quests')}
+          >
+            <BookOpen size={isSmallScreen ? 16 : 20} color={
+              selectedTab === 'quests' ? Colors.primary[600] : Colors.neutral[400]
+            } />
+            <Text style={[
+              styles.tabText,
+              selectedTab === 'quests' && styles.activeTabText,
+              isSmallScreen && styles.tabTextSmall
+            ]}>
+              Quests
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              selectedTab === 'challenges' && styles.activeTab,
+              isSmallScreen && styles.tabSmall
+            ]}
+            onPress={() => setSelectedTab('challenges')}
+          >
+            <Target size={isSmallScreen ? 16 : 20} color={
+              selectedTab === 'challenges' ? Colors.primary[600] : Colors.neutral[400]
+            } />
+            <Text style={[
+              styles.tabText,
+              selectedTab === 'challenges' && styles.activeTabText,
+              isSmallScreen && styles.tabTextSmall
+            ]}>
+              Daily
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              selectedTab === 'progress' && styles.activeTab,
+              isSmallScreen && styles.tabSmall
+            ]}
+            onPress={() => setSelectedTab('progress')}
+          >
+            <Trophy size={isSmallScreen ? 16 : 20} color={
+              selectedTab === 'progress' ? Colors.primary[600] : Colors.neutral[400]
+            } />
+            <Text style={[
+              styles.tabText,
+              selectedTab === 'progress' && styles.activeTabText,
+              isSmallScreen && styles.tabTextSmall
+            ]}>
+              Progress
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Content */}
+        {selectedTab === 'quests' && (
+          <View style={styles.tabContent}>
+            {quests.map(quest => (
+              <QuestCard key={quest.id} quest={quest} />
+            ))}
+          </View>
+        )}
+
+        {selectedTab === 'challenges' && (
+          <View style={styles.tabContent}>
+            <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>
+              Daily Challenges
+            </Text>
+            {dailyChallenges.map(challenge => (
+              <ChallengeCard key={challenge.id} challenge={challenge} />
+            ))}
+          </View>
+        )}
+
+        {selectedTab === 'progress' && (
+          <View style={styles.tabContent}>
+            <View style={[styles.progressSection, isSmallScreen && styles.progressSectionSmall]}>
+              <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>
+                Learning Progress
+              </Text>
+              
+              <View style={[styles.progressCard, isSmallScreen && styles.progressCardSmall]}>
+                <Text style={[styles.progressCardTitle, isSmallScreen && styles.progressCardTitleSmall]}>
+                  Overall Completion
+                </Text>
+                <View style={[styles.progressContainer, isSmallScreen && styles.progressContainerSmall]}>
+                  <View style={[styles.progressBar, isSmallScreen && styles.progressBarSmall]}>
+                    <View 
+                      style={[
+                        styles.progressFill,
+                        { width: `${(getCompletedQuests().length / quests.length) * 100}%` }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={[styles.progressText, isSmallScreen && styles.progressTextSmall]}>
+                    {Math.round((getCompletedQuests().length / quests.length) * 100)}%
+                  </Text>
+                </View>
+              </View>
+
+              {/* Category Progress */}
+              {['beginner', 'intermediate', 'advanced'].map(category => {
+                const categoryQuests = getQuestsByCategory(category as any);
+                const completedInCategory = categoryQuests.filter(q => q.completed).length;
+                const progressPercent = categoryQuests.length > 0 
+                  ? (completedInCategory / categoryQuests.length) * 100 
+                  : 0;
+
+                return (
+                  <View key={category} style={[styles.categoryProgress, isSmallScreen && styles.categoryProgressSmall]}>
+                    <Text style={[styles.categoryTitle, isSmallScreen && styles.categoryTitleSmall]}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </Text>
+                    <View style={[styles.progressContainer, isSmallScreen && styles.progressContainerSmall]}>
+                      <View style={[styles.progressBar, isSmallScreen && styles.progressBarSmall]}>
+                        <View 
+                          style={[
+                            styles.progressFill,
+                            { 
+                              width: `${progressPercent}%`,
+                              backgroundColor: getCategoryColor(category as any)
+                            }
+                          ]} 
+                        />
+                      </View>
+                      <Text style={[styles.progressText, isSmallScreen && styles.progressTextSmall]}>
+                        {completedInCategory}/{categoryQuests.length}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Lesson Modal */}
+      <LessonModal
+        lesson={selectedLesson}
+        visible={showLessonModal}
+        onClose={() => setShowLessonModal(false)}
+        onComplete={handleLessonComplete}
+      />
+
+      {/* Achievement Notification */}
+      <AchievementNotification
+        achievement={newAchievement}
+        visible={!!newAchievement}
+        onHide={() => setNewAchievement(null)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: Layout.spacing.lg,
+    paddingBottom: Layout.spacing.xxl,
+  },
   header: {
-    marginBottom: Layout.spacing.lg,
-    paddingHorizontal: Layout.spacing.md,
-    paddingTop: Layout.spacing.lg,
+    marginBottom: Layout.spacing.xl,
+    marginTop: Layout.spacing.xl,
   },
   headerSmall: {
-    marginBottom: Layout.spacing.md,
-    paddingHorizontal: Layout.spacing.sm,
-    paddingTop: Layout.spacing.md,
+    marginBottom: Layout.spacing.lg,
+    marginTop: Layout.spacing.lg,
   },
   title: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 26,
-    color: Colors.primary[800],
-    textAlign: 'center',
-    marginBottom: 6,
+    fontSize: 32,
+    color: Colors.primary[700],
+    marginBottom: Layout.spacing.xs,
   },
   titleSmall: {
-    fontSize: 20,
-    marginBottom: 4,
+    fontSize: 24,
   },
   subtitle: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 15,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 18,
     color: Colors.neutral[600],
-    textAlign: 'center',
+    marginBottom: Layout.spacing.lg,
   },
   subtitleSmall: {
-    fontSize: 12,
+    fontSize: 14,
+    marginBottom: Layout.spacing.md,
   },
-  tipContainer: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: '#E0E7FF',
-    padding: 12,
-    borderRadius: 10,
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.spacing.lg,
+    ...Layout.shadows.small,
   },
-  tipContainerSmall: {
-    marginHorizontal: 12,
-    marginBottom: 8,
-    padding: 8,
-    borderRadius: 8,
+  statsContainerSmall: {
+    padding: Layout.spacing.md,
   },
-  tipTitle: {
+  statItem: {
+    alignItems: 'center',
+    gap: Layout.spacing.xs,
+  },
+  statItemSmall: {
+    gap: Layout.spacing.xs / 2,
+  },
+  statValue: {
     fontFamily: 'Nunito-Bold',
-    color: '#1E3A8A',
-    fontSize: 13,
+    fontSize: 24,
+    color: Colors.neutral[800],
   },
-  tipTitleSmall: {
-    fontSize: 11,
+  statValueSmall: {
+    fontSize: 18,
   },
-  tipText: {
+  statLabel: {
     fontFamily: 'Nunito-Regular',
-    color: '#1E40AF',
     fontSize: 12,
+    color: Colors.neutral[600],
   },
-  tipTextSmall: {
+  statLabelSmall: {
     fontSize: 10,
   },
   tabContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
-    paddingHorizontal: 8,
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.lg,
+    padding: 4,
+    marginBottom: Layout.spacing.lg,
+    ...Layout.shadows.small,
   },
   tabContainerSmall: {
-    marginBottom: 8,
-    paddingHorizontal: 4,
+    marginBottom: Layout.spacing.md,
   },
   tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    backgroundColor: '#E0E7FF',
-    marginHorizontal: 8,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 12,
+    borderRadius: Layout.borderRadius.md,
   },
   tabSmall: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    marginHorizontal: 4,
+    paddingVertical: 8,
+    gap: 2,
   },
   activeTab: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: Colors.primary[50],
   },
   tabText: {
-    fontFamily: 'Nunito-Regular',
-    color: '#1E3A8A',
-    textAlign: 'center',
-    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 14,
+    color: Colors.neutral[400],
   },
   tabTextSmall: {
-    fontSize: 11,
+    fontSize: 12,
   },
   activeTabText: {
-    color: '#fff',
-    fontFamily: 'Nunito-Bold',
+    color: Colors.primary[600],
   },
-  lessonList: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  lessonListSmall: {
-    paddingHorizontal: 12,
-    paddingBottom: 16,
-  },
-  lessonCard: {
-    backgroundColor: '#fff',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-    flexShrink: 1,
-  },
-  lessonCardSmall: {
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  lessonTitle: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 13,
-    color: '#111827',
-  },
-  lessonTitleSmall: {
-    fontSize: 11,
-  },
-  modalOverlay: {
+  tabContent: {
     flex: 1,
-    backgroundColor: '#000000aa',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    width: '95%',
-    maxWidth: 420,
-    padding: 20,
-    borderRadius: 12,
-  },
-  modalContentSmall: {
-    width: '98%',
-    maxWidth: 350,
-    padding: 16,
-    borderRadius: 10,
-  },
-  modalTitle: {
+  sectionTitle: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 17,
-    marginBottom: 10,
-    color: '#4B5563',
+    fontSize: 20,
+    color: Colors.primary[700],
+    marginBottom: Layout.spacing.lg,
   },
-  modalTitleSmall: {
-    fontSize: 15,
-    marginBottom: 8,
+  sectionTitleSmall: {
+    fontSize: 18,
+    marginBottom: Layout.spacing.md,
   },
-  modalText: {
+  questCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.spacing.lg,
+    marginBottom: Layout.spacing.lg,
+    ...Layout.shadows.medium,
+  },
+  questCardSmall: {
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.md,
+  },
+  questHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Layout.spacing.md,
+  },
+  questTitleRow: {
+    flex: 1,
+  },
+  questTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 18,
+    color: Colors.neutral[800],
+    marginBottom: 4,
+  },
+  questTitleSmall: {
+    fontSize: 16,
+  },
+  categoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  categoryBadgeSmall: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  categoryText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    color: Colors.card,
+  },
+  categoryTextSmall: {
+    fontSize: 8,
+  },
+  completedBadge: {
+    padding: 4,
+  },
+  completedBadgeSmall: {
+    padding: 2,
+  },
+  questDescription: {
     fontFamily: 'Nunito-Regular',
-    fontSize: 13.5,
-    color: '#374151',
+    fontSize: 14,
+    color: Colors.neutral[600],
     lineHeight: 20,
+    marginBottom: Layout.spacing.md,
   },
-  modalTextSmall: {
+  questDescriptionSmall: {
     fontSize: 12,
     lineHeight: 18,
   },
-  closeButton: {
-    marginTop: 16,
-    backgroundColor: '#7C3AED',
-    padding: 10,
-    borderRadius: 8,
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Layout.spacing.sm,
+    marginBottom: Layout.spacing.md,
   },
-  closeButtonSmall: {
-    marginTop: 12,
-    padding: 8,
-    borderRadius: 6,
+  progressContainerSmall: {
+    gap: Layout.spacing.xs,
+    marginBottom: Layout.spacing.sm,
   },
-  closeButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontFamily: 'Nunito-Bold',
+  progressBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: Colors.neutral[200],
+    borderRadius: 4,
+  },
+  progressBarSmall: {
+    height: 6,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary[500],
+    borderRadius: 4,
+  },
+  progressText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
+    color: Colors.neutral[600],
+    minWidth: 40,
+  },
+  progressTextSmall: {
+    fontSize: 10,
+    minWidth: 30,
+  },
+  lessonsContainer: {
+    gap: Layout.spacing.sm,
+    marginBottom: Layout.spacing.md,
+  },
+  lessonsContainerSmall: {
+    gap: Layout.spacing.xs,
+    marginBottom: Layout.spacing.sm,
+  },
+  lessonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.neutral[50],
+    borderRadius: Layout.borderRadius.md,
+    padding: Layout.spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.neutral[300],
+  },
+  lessonItemSmall: {
+    padding: Layout.spacing.sm,
+  },
+  lessonItemCompleted: {
+    backgroundColor: Colors.success[50],
+    borderLeftColor: Colors.success[500],
+  },
+  lessonInfo: {
+    flex: 1,
+  },
+  lessonTitle: {
+    fontFamily: 'Nunito-SemiBold',
     fontSize: 14,
+    color: Colors.neutral[800],
+    marginBottom: 2,
   },
-  closeButtonTextSmall: {
+  lessonTitleSmall: {
     fontSize: 12,
   },
-  tributeText: {
-    marginTop: 12,
-    textAlign: 'center',
-    color: '#7C3AED',
-    fontFamily: 'Nunito-Bold',
-    fontSize: 13,
+  lessonTitleCompleted: {
+    color: Colors.success[700],
   },
-  tributeTextSmall: {
-    marginTop: 8,
-    fontSize: 11,
+  lessonMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  lessonTime: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    color: Colors.neutral[500],
+  },
+  lessonTimeSmall: {
+    fontSize: 10,
+  },
+  rewardsContainer: {
+    backgroundColor: Colors.primary[50],
+    borderRadius: Layout.borderRadius.sm,
+    padding: Layout.spacing.sm,
+  },
+  rewardsContainerSmall: {
+    padding: Layout.spacing.xs,
+  },
+  rewardsTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 12,
+    color: Colors.primary[700],
+    marginBottom: 2,
+  },
+  rewardsTitleSmall: {
+    fontSize: 10,
+  },
+  rewardsText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
+    color: Colors.primary[600],
+  },
+  rewardsTextSmall: {
+    fontSize: 10,
+  },
+  challengeCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.spacing.lg,
+    marginBottom: Layout.spacing.md,
+    ...Layout.shadows.small,
+  },
+  challengeCardSmall: {
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
+  },
+  challengeCardCompleted: {
+    backgroundColor: Colors.success[50],
+    borderColor: Colors.success[200],
+    borderWidth: 1,
+  },
+  challengeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Layout.spacing.md,
+  },
+  challengeEmoji: {
+    fontSize: 32,
+    marginRight: Layout.spacing.md,
+  },
+  challengeEmojiSmall: {
+    fontSize: 24,
+    marginRight: Layout.spacing.sm,
+  },
+  challengeInfo: {
+    flex: 1,
+  },
+  challengeTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 16,
+    color: Colors.neutral[800],
+    marginBottom: 2,
+  },
+  challengeTitleSmall: {
+    fontSize: 14,
+  },
+  challengeDescription: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: Colors.neutral[600],
+  },
+  challengeDescriptionSmall: {
+    fontSize: 12,
+  },
+  challengeReward: {
+    backgroundColor: Colors.primary[50],
+    borderRadius: Layout.borderRadius.sm,
+    padding: Layout.spacing.sm,
+  },
+  challengeRewardSmall: {
+    padding: Layout.spacing.xs,
+  },
+  rewardText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
+    color: Colors.primary[700],
+  },
+  rewardTextSmall: {
+    fontSize: 10,
+  },
+  progressSection: {
+    gap: Layout.spacing.lg,
+  },
+  progressSectionSmall: {
+    gap: Layout.spacing.md,
+  },
+  progressCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.spacing.lg,
+    ...Layout.shadows.small,
+  },
+  progressCardSmall: {
+    padding: Layout.spacing.md,
+  },
+  progressCardTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 16,
+    color: Colors.neutral[800],
+    marginBottom: Layout.spacing.md,
+  },
+  progressCardTitleSmall: {
+    fontSize: 14,
+    marginBottom: Layout.spacing.sm,
+  },
+  categoryProgress: {
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.md,
+    padding: Layout.spacing.md,
+    ...Layout.shadows.small,
+  },
+  categoryProgressSmall: {
+    padding: Layout.spacing.sm,
+  },
+  categoryTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.neutral[700],
+    marginBottom: Layout.spacing.sm,
+  },
+  categoryTitleSmall: {
+    fontSize: 12,
+    marginBottom: Layout.spacing.xs,
   },
 });
