@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Newspaper } from 'lucide-react-native';
+import { LineChart } from 'react-native-chart-kit';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import GameButton from '@/src/components/buttons/GameButton';
@@ -101,6 +102,68 @@ export default function MarketScreen() {
   const { width } = useWindowDimensions();
   const isWide = width >= 600;
   const isSmallScreen = width < 400;
+
+  // Generate chart data for market overview
+  const generateMarketChartData = () => {
+    const labels = ['1h', '6h', '12h', '18h', '24h'];
+    const data = [];
+    let baseValue = 100;
+    
+    for (let i = 0; i < 5; i++) {
+      const change = (Math.random() - 0.5) * 10;
+      baseValue += change;
+      data.push(Math.max(50, baseValue));
+    }
+    
+    return {
+      labels,
+      datasets: [{
+        data,
+        color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
+        strokeWidth: 3,
+      }],
+    };
+  };
+
+  const [chartData] = useState(generateMarketChartData());
+
+  // Responsive chart configuration
+  const getChartConfig = () => {
+    const chartWidth = isSmallScreen ? width - 40 : isWide ? Math.min(width - 100, 500) : width - 60;
+    const chartHeight = isSmallScreen ? 180 : 220;
+    
+    return {
+      width: chartWidth,
+      height: chartHeight,
+      config: {
+        backgroundColor: '#ffffff',
+        backgroundGradientFrom: '#ffffff',
+        backgroundGradientTo: '#ffffff',
+        decimalPlaces: 0,
+        color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
+        labelColor: (opacity = 1) => `rgba(55, 65, 81, ${opacity})`,
+        style: {
+          borderRadius: 16,
+        },
+        propsForDots: {
+          r: isSmallScreen ? "4" : "6",
+          strokeWidth: "3",
+          stroke: "#059669",
+          fill: "#10B981",
+        },
+        propsForBackgroundLines: {
+          strokeDasharray: "3,3",
+          stroke: "#E5E7EB",
+          strokeWidth: 1,
+        },
+        fillShadowGradient: '#10B981',
+        fillShadowGradientOpacity: 0.3,
+        strokeWidth: 3,
+      }
+    };
+  };
+
+  const { width: chartWidth, height: chartHeight, config: chartConfig } = getChartConfig();
 
   const handleCoinPress = (coin: Coin) => {
     setSelectedCoin(coin);
@@ -343,6 +406,34 @@ export default function MarketScreen() {
           </Text>
           <Text style={[styles.balance, isSmallScreen && styles.balanceSmall]}>
             💰 Balance: {formatMoney(balance)}
+          </Text>
+        </View>
+
+        {/* Market Overview Chart */}
+        <View style={[styles.chartSection, isSmallScreen && styles.chartSectionSmall]}>
+          <Text style={[styles.chartTitle, isSmallScreen && styles.chartTitleSmall]}>
+            📊 Market Overview
+          </Text>
+          <View style={[styles.chartContainer, isSmallScreen && styles.chartContainerSmall]}>
+            <View style={styles.chartWrapper}>
+              <LineChart
+                data={chartData}
+                width={chartWidth}
+                height={chartHeight}
+                chartConfig={chartConfig}
+                bezier
+                style={styles.chart}
+                withDots={true}
+                withShadow={true}
+                withInnerLines={true}
+                withOuterLines={false}
+                fromZero={false}
+                segments={4}
+              />
+            </View>
+          </View>
+          <Text style={[styles.chartDescription, isSmallScreen && styles.chartDescriptionSmall]}>
+            Overall market performance in the last 24 hours
           </Text>
         </View>
 
@@ -824,6 +915,60 @@ const styles = StyleSheet.create({
   },
   balanceSmall: {
     fontSize: 16,
+  },
+  // Chart Section Styles
+  chartSection: {
+    backgroundColor: Colors.card,
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.spacing.lg,
+    marginBottom: Layout.spacing.xl,
+    ...Layout.shadows.medium,
+  },
+  chartSectionSmall: {
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.lg,
+    borderRadius: Layout.borderRadius.md,
+  },
+  chartTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 20,
+    color: Colors.primary[700],
+    marginBottom: Layout.spacing.md,
+    textAlign: 'center',
+  },
+  chartTitleSmall: {
+    fontSize: 16,
+    marginBottom: Layout.spacing.sm,
+  },
+  chartContainer: {
+    alignItems: 'center',
+    marginBottom: Layout.spacing.md,
+  },
+  chartContainerSmall: {
+    marginBottom: Layout.spacing.sm,
+  },
+  chartWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: Layout.borderRadius.md,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chart: {
+    borderRadius: Layout.borderRadius.md,
+  },
+  chartDescription: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: Colors.neutral[600],
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  chartDescriptionSmall: {
+    fontSize: 12,
   },
   tabContainer: {
     flexDirection: 'row',
