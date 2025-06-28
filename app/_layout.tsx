@@ -6,13 +6,32 @@ import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/src/hooks/system/useFrameworkReady';
 import { useFonts } from 'expo-font';
 import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
-import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text, Platform } from 'react-native';
 import Colors from '@/src/constants/Colors';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
+
+// Suppress React Native Web warnings in development
+if (__DEV__ && Platform.OS === 'web') {
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    const message = args[0];
+    if (
+      typeof message === 'string' &&
+      (message.includes('Invalid DOM property') ||
+       message.includes('Unknown event handler property') ||
+       message.includes('transform-origin') ||
+       message.includes('onResponder'))
+    ) {
+      // Suppress these specific React Native Web warnings
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
 
 export default function RootLayout() {
   useFrameworkReady();
