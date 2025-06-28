@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { PieChart, LineChart } from 'react-native-chart-kit';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
@@ -18,6 +18,11 @@ interface PortfolioChartProps {
   totalChange: number;
   timeRange: '1D' | '7D' | '1M' | '3M' | '1Y';
   onTimeRangeChange: (range: '1D' | '7D' | '1M' | '3M' | '1Y') => void;
+  width?: number;
+  height?: number;
+  isSmallScreen?: boolean;
+  isMediumScreen?: boolean;
+  isTablet?: boolean;
 }
 
 export default function PortfolioChart({
@@ -26,26 +31,52 @@ export default function PortfolioChart({
   totalChange,
   timeRange,
   onTimeRangeChange,
+  width: screenWidth = Dimensions.get('window').width,
+  height: screenHeight = Dimensions.get('window').height,
+  isSmallScreen = false,
+  isMediumScreen = false,
+  isTablet = false,
 }: PortfolioChartProps) {
-  const { width } = useWindowDimensions();
-  const isSmallScreen = width < 400;
-  const chartWidth = Math.min(width - (isSmallScreen ? 32 : 48), 380);
+  // Responsive chart sizing
+  const getChartDimensions = () => {
+    const padding = isSmallScreen ? 32 : isTablet ? 64 : 48;
+    const maxWidth = isTablet ? 600 : isSmallScreen ? 320 : 400;
+    const chartWidth = Math.min(screenWidth - padding, maxWidth);
+    
+    let chartHeight;
+    if (isSmallScreen) {
+      chartHeight = Math.min(180, screenHeight * 0.25);
+    } else if (isTablet) {
+      chartHeight = Math.min(300, screenHeight * 0.35);
+    } else {
+      chartHeight = Math.min(240, screenHeight * 0.3);
+    }
+    
+    return { chartWidth, chartHeight };
+  };
+
+  const { chartWidth, chartHeight } = getChartDimensions();
   
   const [chartType, setChartType] = useState<'pie' | 'line' | 'performance'>('pie');
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
-  // Enhanced color palette for better visibility
+  // Enhanced color palette for better visibility with more vibrant colors
   const vibrantColors = [
-    '#10B981', // Emerald
-    '#3B82F6', // Blue
-    '#F59E0B', // Amber
-    '#EF4444', // Red
-    '#8B5CF6', // Violet
-    '#06B6D4', // Cyan
-    '#84CC16', // Lime
-    '#F97316', // Orange
-    '#EC4899', // Pink
-    '#6366F1', // Indigo
+    '#10B981', // Emerald - Strong green
+    '#3B82F6', // Blue - Vibrant blue
+    '#F59E0B', // Amber - Bright yellow
+    '#EF4444', // Red - Strong red
+    '#8B5CF6', // Violet - Rich purple
+    '#06B6D4', // Cyan - Bright cyan
+    '#84CC16', // Lime - Vivid green
+    '#F97316', // Orange - Bright orange
+    '#EC4899', // Pink - Vibrant pink
+    '#6366F1', // Indigo - Deep blue
+    '#14B8A6', // Teal - Strong teal
+    '#F472B6', // Rose - Bright rose
+    '#A855F7', // Purple - Rich purple
+    '#22D3EE', // Sky - Bright sky blue
+    '#FB923C', // Orange variant
   ];
 
   // Generate historical portfolio data
@@ -102,7 +133,7 @@ export default function PortfolioChart({
     return labels;
   };
 
-  // Enhanced chart configuration
+  // Enhanced chart configuration with stronger colors
   const getChartConfig = () => ({
     backgroundColor: '#FFFFFF',
     backgroundGradientFrom: '#FFFFFF',
@@ -116,7 +147,7 @@ export default function PortfolioChart({
       borderRadius: 16,
     },
     propsForDots: {
-      r: "5",
+      r: isSmallScreen ? "4" : isTablet ? "6" : "5",
       strokeWidth: "3",
       stroke: totalChange >= 0 ? '#059669' : '#DC2626',
       fill: totalChange >= 0 ? '#10B981' : '#EF4444',
@@ -127,103 +158,154 @@ export default function PortfolioChart({
       strokeWidth: 1,
     },
     fillShadowGradient: totalChange >= 0 ? '#10B981' : '#EF4444',
-    fillShadowGradientOpacity: 0.2,
-    strokeWidth: 3,
+    fillShadowGradientOpacity: 0.3, // Increased opacity for better visibility
+    strokeWidth: isSmallScreen ? 2 : isTablet ? 4 : 3,
   });
 
-  // Prepare pie chart data with vibrant colors
+  // Prepare pie chart data with enhanced visibility
   const pieData = assets
     .filter(asset => asset.value > 0)
+    .slice(0, 10) // Limit to top 10 assets for better readability
     .map((asset, index) => ({
-      name: asset.name,
+      name: isSmallScreen ? asset.name.slice(0, 6) : asset.name,
       population: asset.value,
       color: vibrantColors[index % vibrantColors.length],
       legendFontColor: Colors.neutral[700],
-      legendFontSize: isSmallScreen ? 11 : 13,
+      legendFontSize: isSmallScreen ? 10 : isTablet ? 14 : 12,
     }));
 
   // Prepare line chart data
   const lineChartData = {
     labels: generateLabels().length > 10 
-      ? generateLabels().filter((_, i) => i % Math.ceil(generateLabels().length / 8) === 0)
+      ? generateLabels().filter((_, i) => i % Math.ceil(generateLabels().length / (isSmallScreen ? 6 : 8)) === 0)
       : generateLabels(),
     datasets: [{
       data: portfolioHistory.length > 10 
-        ? portfolioHistory.filter((_, i) => i % Math.ceil(portfolioHistory.length / 8) === 0)
+        ? portfolioHistory.filter((_, i) => i % Math.ceil(portfolioHistory.length / (isSmallScreen ? 6 : 8)) === 0)
         : portfolioHistory,
       color: (opacity = 1) => totalChange >= 0 
         ? `rgba(16, 185, 129, ${opacity})` 
         : `rgba(239, 68, 68, ${opacity})`,
-      strokeWidth: 3,
+      strokeWidth: isSmallScreen ? 2 : isTablet ? 4 : 3,
     }],
   };
 
   // Performance comparison data
   const performanceData = {
-    labels: assets.slice(0, 5).map(asset => asset.name.slice(0, 6)),
+    labels: assets.slice(0, isSmallScreen ? 3 : 5).map(asset => 
+      isSmallScreen ? asset.name.slice(0, 4) : asset.name.slice(0, 6)
+    ),
     datasets: [{
-      data: assets.slice(0, 5).map(asset => asset.change),
+      data: assets.slice(0, isSmallScreen ? 3 : 5).map(asset => asset.change),
       color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-      strokeWidth: 3,
+      strokeWidth: isSmallScreen ? 2 : isTablet ? 4 : 3,
     }],
   };
 
   const timeRanges: Array<'1D' | '7D' | '1M' | '3M' | '1Y'> = ['1D', '7D', '1M', '3M', '1Y'];
 
   return (
-    <View style={[styles.container, isSmallScreen && styles.containerSmall]}>
+    <View style={[
+      styles.container, 
+      isSmallScreen && styles.containerSmall,
+      isTablet && styles.containerTablet
+    ]}>
       {/* Header */}
-      <View style={[styles.header, isSmallScreen && styles.headerSmall]}>
+      <View style={[
+        styles.header, 
+        isSmallScreen && styles.headerSmall,
+        isTablet && styles.headerTablet
+      ]}>
         <View>
-          <Text style={[styles.title, isSmallScreen && styles.titleSmall]}>
+          <Text style={[
+            styles.title, 
+            isSmallScreen && styles.titleSmall,
+            isTablet && styles.titleTablet
+          ]}>
             Portfolio Overview
           </Text>
-          <Text style={[styles.totalValue, isSmallScreen && styles.totalValueSmall]}>
+          <Text style={[
+            styles.totalValue, 
+            isSmallScreen && styles.totalValueSmall,
+            isTablet && styles.totalValueTablet
+          ]}>
             ${totalValue.toLocaleString()}
           </Text>
           <Text style={[
             styles.totalChange,
             { color: totalChange >= 0 ? '#10B981' : '#EF4444' },
-            isSmallScreen && styles.totalChangeSmall
+            isSmallScreen && styles.totalChangeSmall,
+            isTablet && styles.totalChangeTablet
           ]}>
             {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% ({timeRange})
           </Text>
         </View>
         
-        <View style={[styles.stats, isSmallScreen && styles.statsSmall]}>
+        <View style={[
+          styles.stats, 
+          isSmallScreen && styles.statsSmall,
+          isTablet && styles.statsTablet
+        ]}>
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>Assets</Text>
-            <Text style={[styles.statValue, isSmallScreen && styles.statValueSmall]}>
+            <Text style={[
+              styles.statLabel, 
+              isSmallScreen && styles.statLabelSmall,
+              isTablet && styles.statLabelTablet
+            ]}>
+              Assets
+            </Text>
+            <Text style={[
+              styles.statValue, 
+              isSmallScreen && styles.statValueSmall,
+              isTablet && styles.statValueTablet
+            ]}>
               {assets.length}
             </Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>Best Performer</Text>
-            <Text style={[styles.statValue, styles.statValuePositive, isSmallScreen && styles.statValueSmall]}>
+            <Text style={[
+              styles.statLabel, 
+              isSmallScreen && styles.statLabelSmall,
+              isTablet && styles.statLabelTablet
+            ]}>
+              Best Performer
+            </Text>
+            <Text style={[
+              styles.statValue, 
+              styles.statValuePositive, 
+              isSmallScreen && styles.statValueSmall,
+              isTablet && styles.statValueTablet
+            ]}>
               {assets.length > 0 ? assets.reduce((best, current) => 
                 current.change > best.change ? current : best
-              ).name.slice(0, 8) : 'N/A'}
+              ).name.slice(0, isSmallScreen ? 6 : 8) : 'N/A'}
             </Text>
           </View>
         </View>
       </View>
 
       {/* Chart Type Selector */}
-      <View style={[styles.chartTypeContainer, isSmallScreen && styles.chartTypeContainerSmall]}>
+      <View style={[
+        styles.chartTypeContainer, 
+        isSmallScreen && styles.chartTypeContainerSmall,
+        isTablet && styles.chartTypeContainerTablet
+      ]}>
         <TouchableOpacity
           style={[
             styles.chartTypeButton,
             chartType === 'pie' && styles.chartTypeButtonActive,
-            isSmallScreen && styles.chartTypeButtonSmall
+            isSmallScreen && styles.chartTypeButtonSmall,
+            isTablet && styles.chartTypeButtonTablet
           ]}
           onPress={() => setChartType('pie')}
         >
           <Text style={[
             styles.chartTypeText,
             chartType === 'pie' && styles.chartTypeTextActive,
-            isSmallScreen && styles.chartTypeTextSmall
+            isSmallScreen && styles.chartTypeTextSmall,
+            isTablet && styles.chartTypeTextTablet
           ]}>
-            🥧 Distribution
+            🥧 {isSmallScreen ? 'Pie' : 'Distribution'}
           </Text>
         </TouchableOpacity>
         
@@ -231,14 +313,16 @@ export default function PortfolioChart({
           style={[
             styles.chartTypeButton,
             chartType === 'line' && styles.chartTypeButtonActive,
-            isSmallScreen && styles.chartTypeButtonSmall
+            isSmallScreen && styles.chartTypeButtonSmall,
+            isTablet && styles.chartTypeButtonTablet
           ]}
           onPress={() => setChartType('line')}
         >
           <Text style={[
             styles.chartTypeText,
             chartType === 'line' && styles.chartTypeTextActive,
-            isSmallScreen && styles.chartTypeTextSmall
+            isSmallScreen && styles.chartTypeTextSmall,
+            isTablet && styles.chartTypeTextTablet
           ]}>
             📈 History
           </Text>
@@ -248,37 +332,45 @@ export default function PortfolioChart({
           style={[
             styles.chartTypeButton,
             chartType === 'performance' && styles.chartTypeButtonActive,
-            isSmallScreen && styles.chartTypeButtonSmall
+            isSmallScreen && styles.chartTypeButtonSmall,
+            isTablet && styles.chartTypeButtonTablet
           ]}
           onPress={() => setChartType('performance')}
         >
           <Text style={[
             styles.chartTypeText,
             chartType === 'performance' && styles.chartTypeTextActive,
-            isSmallScreen && styles.chartTypeTextSmall
+            isSmallScreen && styles.chartTypeTextSmall,
+            isTablet && styles.chartTypeTextTablet
           ]}>
-            🏆 Performance
+            🏆 {isSmallScreen ? 'Perf' : 'Performance'}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Time Range Selector (for line chart) */}
       {chartType === 'line' && (
-        <View style={[styles.timeRangeContainer, isSmallScreen && styles.timeRangeContainerSmall]}>
+        <View style={[
+          styles.timeRangeContainer, 
+          isSmallScreen && styles.timeRangeContainerSmall,
+          isTablet && styles.timeRangeContainerTablet
+        ]}>
           {timeRanges.map((range) => (
             <TouchableOpacity
               key={range}
               style={[
                 styles.timeRangeButton,
                 timeRange === range && styles.timeRangeButtonActive,
-                isSmallScreen && styles.timeRangeButtonSmall
+                isSmallScreen && styles.timeRangeButtonSmall,
+                isTablet && styles.timeRangeButtonTablet
               ]}
               onPress={() => onTimeRangeChange(range)}
             >
               <Text style={[
                 styles.timeRangeText,
                 timeRange === range && styles.timeRangeTextActive,
-                isSmallScreen && styles.timeRangeTextSmall
+                isSmallScreen && styles.timeRangeTextSmall,
+                isTablet && styles.timeRangeTextTablet
               ]}>
                 {range}
               </Text>
@@ -287,134 +379,227 @@ export default function PortfolioChart({
         </View>
       )}
 
-      {/* Enhanced Chart Display */}
-      <View style={[styles.chartContainer, isSmallScreen && styles.chartContainerSmall]}>
-        <View style={styles.chartWrapper}>
+      {/* Enhanced Chart Display with Responsive Sizing */}
+      <View style={[
+        styles.chartContainer, 
+        isSmallScreen && styles.chartContainerSmall,
+        isTablet && styles.chartContainerTablet
+      ]}>
+        <View style={[
+          styles.chartWrapper,
+          isSmallScreen && styles.chartWrapperSmall,
+          isTablet && styles.chartWrapperTablet
+        ]}>
           {chartType === 'pie' && pieData.length > 0 ? (
             <PieChart
               data={pieData}
               width={chartWidth}
-              height={isSmallScreen ? 200 : 240}
+              height={chartHeight}
               accessor="population"
               backgroundColor="transparent"
-              paddingLeft="15"
+              paddingLeft={isSmallScreen ? "10" : isTablet ? "20" : "15"}
               center={[0, 0]}
               absolute
               chartConfig={{
                 color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
               }}
+              hasLegend={!isSmallScreen} // Hide legend on small screens to save space
+              avoidFalseZero={true}
             />
           ) : chartType === 'line' ? (
             <LineChart
               data={lineChartData}
               width={chartWidth}
-              height={isSmallScreen ? 200 : 240}
+              height={chartHeight}
               chartConfig={getChartConfig()}
               bezier
               style={styles.chart}
-              withDots={portfolioHistory.length <= 20}
+              withDots={portfolioHistory.length <= (isSmallScreen ? 15 : 20)}
               withShadow={true}
               withInnerLines={true}
               withOuterLines={false}
               fromZero={false}
-              segments={4}
+              segments={isSmallScreen ? 3 : 4}
+              withVerticalLabels={true}
+              withHorizontalLabels={true}
             />
           ) : (
             <LineChart
               data={performanceData}
               width={chartWidth}
-              height={isSmallScreen ? 200 : 240}
+              height={chartHeight}
               chartConfig={{
                 ...getChartConfig(),
                 color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
                 fillShadowGradient: '#3B82F6',
-                fillShadowGradientOpacity: 0.2,
+                fillShadowGradientOpacity: 0.3,
               }}
               style={styles.chart}
               withDots={true}
               withInnerLines={true}
               withOuterLines={false}
               fromZero={true}
-              segments={4}
+              segments={isSmallScreen ? 3 : 4}
             />
           )}
         </View>
       </View>
 
-      {/* Asset Breakdown */}
+      {/* Asset Breakdown - Enhanced for small screens */}
       {chartType === 'pie' && (
-        <View style={[styles.assetBreakdown, isSmallScreen && styles.assetBreakdownSmall]}>
-          <Text style={[styles.breakdownTitle, isSmallScreen && styles.breakdownTitleSmall]}>
+        <View style={[
+          styles.assetBreakdown, 
+          isSmallScreen && styles.assetBreakdownSmall,
+          isTablet && styles.assetBreakdownTablet
+        ]}>
+          <Text style={[
+            styles.breakdownTitle, 
+            isSmallScreen && styles.breakdownTitleSmall,
+            isTablet && styles.breakdownTitleTablet
+          ]}>
             Asset Breakdown
           </Text>
-          {assets.slice(0, 5).map((asset, index) => (
+          {assets.slice(0, isSmallScreen ? 4 : 6).map((asset, index) => (
             <TouchableOpacity
               key={asset.name}
-              style={[styles.assetItem, isSmallScreen && styles.assetItemSmall]}
+              style={[
+                styles.assetItem, 
+                isSmallScreen && styles.assetItemSmall,
+                isTablet && styles.assetItemTablet
+              ]}
               onPress={() => setSelectedAsset(selectedAsset === asset.name ? null : asset.name)}
             >
               <View style={styles.assetInfo}>
                 <View style={[
                   styles.assetColorDot,
-                  { backgroundColor: vibrantColors[index % vibrantColors.length] }
+                  { backgroundColor: vibrantColors[index % vibrantColors.length] },
+                  isSmallScreen && styles.assetColorDotSmall,
+                  isTablet && styles.assetColorDotTablet
                 ]} />
-                <Text style={[styles.assetName, isSmallScreen && styles.assetNameSmall]}>
-                  {asset.emoji} {asset.name}
+                <Text style={[
+                  styles.assetName, 
+                  isSmallScreen && styles.assetNameSmall,
+                  isTablet && styles.assetNameTablet
+                ]}>
+                  {asset.emoji} {isSmallScreen ? asset.name.slice(0, 8) : asset.name}
                 </Text>
               </View>
               <View style={styles.assetValues}>
-                <Text style={[styles.assetValue, isSmallScreen && styles.assetValueSmall]}>
+                <Text style={[
+                  styles.assetValue, 
+                  isSmallScreen && styles.assetValueSmall,
+                  isTablet && styles.assetValueTablet
+                ]}>
                   ${asset.value.toLocaleString()}
                 </Text>
-                <Text style={[styles.assetPercentage, isSmallScreen && styles.assetPercentageSmall]}>
+                <Text style={[
+                  styles.assetPercentage, 
+                  isSmallScreen && styles.assetPercentageSmall,
+                  isTablet && styles.assetPercentageTablet
+                ]}>
                   {((asset.value / totalValue) * 100).toFixed(1)}%
                 </Text>
               </View>
             </TouchableOpacity>
           ))}
+          {assets.length > (isSmallScreen ? 4 : 6) && (
+            <Text style={[
+              styles.moreAssetsText,
+              isSmallScreen && styles.moreAssetsTextSmall,
+              isTablet && styles.moreAssetsTextTablet
+            ]}>
+              +{assets.length - (isSmallScreen ? 4 : 6)} more assets
+            </Text>
+          )}
         </View>
       )}
 
       {/* Performance Insights */}
       {chartType === 'performance' && (
-        <View style={[styles.performanceInsights, isSmallScreen && styles.performanceInsightsSmall]}>
-          <Text style={[styles.insightsTitle, isSmallScreen && styles.insightsTitleSmall]}>
+        <View style={[
+          styles.performanceInsights, 
+          isSmallScreen && styles.performanceInsightsSmall,
+          isTablet && styles.performanceInsightsTablet
+        ]}>
+          <Text style={[
+            styles.insightsTitle, 
+            isSmallScreen && styles.insightsTitleSmall,
+            isTablet && styles.insightsTitleTablet
+          ]}>
             Performance Insights
           </Text>
-          <View style={[styles.insightsGrid, isSmallScreen && styles.insightsGridSmall]}>
+          <View style={[
+            styles.insightsGrid, 
+            isSmallScreen && styles.insightsGridSmall,
+            isTablet && styles.insightsGridTablet
+          ]}>
             <View style={styles.insightItem}>
-              <Text style={[styles.insightLabel, isSmallScreen && styles.insightLabelSmall]}>
+              <Text style={[
+                styles.insightLabel, 
+                isSmallScreen && styles.insightLabelSmall,
+                isTablet && styles.insightLabelTablet
+              ]}>
                 Best Performer
               </Text>
-              <Text style={[styles.insightValue, styles.insightValuePositive, isSmallScreen && styles.insightValueSmall]}>
+              <Text style={[
+                styles.insightValue, 
+                styles.insightValuePositive, 
+                isSmallScreen && styles.insightValueSmall,
+                isTablet && styles.insightValueTablet
+              ]}>
                 {assets.length > 0 ? assets.reduce((best, current) => 
                   current.change > best.change ? current : best
-                ).name : 'N/A'}
+                ).name.slice(0, isSmallScreen ? 6 : 10) : 'N/A'}
               </Text>
             </View>
             <View style={styles.insightItem}>
-              <Text style={[styles.insightLabel, isSmallScreen && styles.insightLabelSmall]}>
+              <Text style={[
+                styles.insightLabel, 
+                isSmallScreen && styles.insightLabelSmall,
+                isTablet && styles.insightLabelTablet
+              ]}>
                 Worst Performer
               </Text>
-              <Text style={[styles.insightValue, styles.insightValueNegative, isSmallScreen && styles.insightValueSmall]}>
+              <Text style={[
+                styles.insightValue, 
+                styles.insightValueNegative, 
+                isSmallScreen && styles.insightValueSmall,
+                isTablet && styles.insightValueTablet
+              ]}>
                 {assets.length > 0 ? assets.reduce((worst, current) => 
                   current.change < worst.change ? current : worst
-                ).name : 'N/A'}
+                ).name.slice(0, isSmallScreen ? 6 : 10) : 'N/A'}
               </Text>
             </View>
             <View style={styles.insightItem}>
-              <Text style={[styles.insightLabel, isSmallScreen && styles.insightLabelSmall]}>
+              <Text style={[
+                styles.insightLabel, 
+                isSmallScreen && styles.insightLabelSmall,
+                isTablet && styles.insightLabelTablet
+              ]}>
                 Avg. Return
               </Text>
-              <Text style={[styles.insightValue, isSmallScreen && styles.insightValueSmall]}>
+              <Text style={[
+                styles.insightValue, 
+                isSmallScreen && styles.insightValueSmall,
+                isTablet && styles.insightValueTablet
+              ]}>
                 {assets.length > 0 ? (assets.reduce((sum, asset) => sum + asset.change, 0) / assets.length).toFixed(2) : '0.00'}%
               </Text>
             </View>
             <View style={styles.insightItem}>
-              <Text style={[styles.insightLabel, isSmallScreen && styles.insightLabelSmall]}>
+              <Text style={[
+                styles.insightLabel, 
+                isSmallScreen && styles.insightLabelSmall,
+                isTablet && styles.insightLabelTablet
+              ]}>
                 Volatility
               </Text>
-              <Text style={[styles.insightValue, isSmallScreen && styles.insightValueSmall]}>
+              <Text style={[
+                styles.insightValue, 
+                isSmallScreen && styles.insightValueSmall,
+                isTablet && styles.insightValueTablet
+              ]}>
                 {assets.length > 0 ? Math.sqrt(assets.reduce((sum, asset) => sum + Math.pow(asset.change - totalChange, 2), 0) / assets.length).toFixed(2) : '0.00'}%
               </Text>
             </View>
@@ -438,6 +623,11 @@ const styles = StyleSheet.create({
     margin: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
   },
+  containerTablet: {
+    padding: Layout.spacing.xl,
+    margin: Layout.spacing.lg,
+    borderRadius: Layout.borderRadius.xl,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -450,6 +640,12 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.md,
     gap: Layout.spacing.sm,
   },
+  headerTablet: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Layout.spacing.xl,
+  },
   title: {
     fontFamily: 'Nunito-Bold',
     fontSize: 20,
@@ -458,6 +654,9 @@ const styles = StyleSheet.create({
   },
   titleSmall: {
     fontSize: 16,
+  },
+  titleTablet: {
+    fontSize: 28,
   },
   totalValue: {
     fontFamily: 'Nunito-Bold',
@@ -468,12 +667,18 @@ const styles = StyleSheet.create({
   totalValueSmall: {
     fontSize: 22,
   },
+  totalValueTablet: {
+    fontSize: 36,
+  },
   totalChange: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 16,
   },
   totalChangeSmall: {
     fontSize: 14,
+  },
+  totalChangeTablet: {
+    fontSize: 20,
   },
   stats: {
     alignItems: 'flex-end',
@@ -482,6 +687,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flexDirection: 'row',
     gap: Layout.spacing.lg,
+  },
+  statsTablet: {
+    alignItems: 'flex-end',
+    gap: Layout.spacing.md,
   },
   statItem: {
     alignItems: 'flex-end',
@@ -495,6 +704,9 @@ const styles = StyleSheet.create({
   statLabelSmall: {
     fontSize: 10,
   },
+  statLabelTablet: {
+    fontSize: 14,
+  },
   statValue: {
     fontFamily: 'Nunito-Bold',
     fontSize: 14,
@@ -502,6 +714,9 @@ const styles = StyleSheet.create({
   },
   statValueSmall: {
     fontSize: 12,
+  },
+  statValueTablet: {
+    fontSize: 18,
   },
   statValuePositive: {
     color: '#10B981',
@@ -516,6 +731,10 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.sm,
     gap: Layout.spacing.xs,
   },
+  chartTypeContainerTablet: {
+    marginBottom: Layout.spacing.lg,
+    gap: Layout.spacing.md,
+  },
   chartTypeButton: {
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -525,6 +744,11 @@ const styles = StyleSheet.create({
   chartTypeButtonSmall: {
     paddingVertical: 6,
     paddingHorizontal: 8,
+  },
+  chartTypeButtonTablet: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: Layout.borderRadius.md,
   },
   chartTypeButtonActive: {
     backgroundColor: Colors.primary[500],
@@ -536,6 +760,9 @@ const styles = StyleSheet.create({
   },
   chartTypeTextSmall: {
     fontSize: 10,
+  },
+  chartTypeTextTablet: {
+    fontSize: 16,
   },
   chartTypeTextActive: {
     color: Colors.card,
@@ -552,6 +779,10 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.sm,
     padding: 2,
   },
+  timeRangeContainerTablet: {
+    marginBottom: Layout.spacing.lg,
+    padding: 6,
+  },
   timeRangeButton: {
     paddingVertical: 6,
     paddingHorizontal: 8,
@@ -560,6 +791,10 @@ const styles = StyleSheet.create({
   timeRangeButtonSmall: {
     paddingVertical: 4,
     paddingHorizontal: 6,
+  },
+  timeRangeButtonTablet: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   timeRangeButtonActive: {
     backgroundColor: Colors.primary[500],
@@ -572,6 +807,9 @@ const styles = StyleSheet.create({
   timeRangeTextSmall: {
     fontSize: 10,
   },
+  timeRangeTextTablet: {
+    fontSize: 16,
+  },
   timeRangeTextActive: {
     color: Colors.card,
   },
@@ -582,6 +820,9 @@ const styles = StyleSheet.create({
   chartContainerSmall: {
     marginBottom: Layout.spacing.md,
   },
+  chartContainerTablet: {
+    marginBottom: Layout.spacing.xl,
+  },
   chartWrapper: {
     backgroundColor: '#FFFFFF',
     borderRadius: Layout.borderRadius.md,
@@ -591,6 +832,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  chartWrapperSmall: {
+    padding: 4,
+    borderRadius: Layout.borderRadius.sm,
+  },
+  chartWrapperTablet: {
+    padding: 16,
+    borderRadius: Layout.borderRadius.lg,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   chart: {
     borderRadius: Layout.borderRadius.md,
@@ -603,6 +855,10 @@ const styles = StyleSheet.create({
   assetBreakdownSmall: {
     padding: Layout.spacing.sm,
   },
+  assetBreakdownTablet: {
+    padding: Layout.spacing.lg,
+    borderRadius: Layout.borderRadius.lg,
+  },
   breakdownTitle: {
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
@@ -612,6 +868,10 @@ const styles = StyleSheet.create({
   breakdownTitleSmall: {
     fontSize: 14,
     marginBottom: Layout.spacing.xs,
+  },
+  breakdownTitleTablet: {
+    fontSize: 20,
+    marginBottom: Layout.spacing.md,
   },
   assetItem: {
     flexDirection: 'row',
@@ -624,6 +884,9 @@ const styles = StyleSheet.create({
   assetItemSmall: {
     paddingVertical: Layout.spacing.xs,
   },
+  assetItemTablet: {
+    paddingVertical: Layout.spacing.md,
+  },
   assetInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -634,8 +897,25 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     marginRight: Layout.spacing.sm,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  assetColorDotSmall: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  assetColorDotTablet: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 3,
   },
   assetName: {
     fontFamily: 'Nunito-SemiBold',
@@ -644,6 +924,9 @@ const styles = StyleSheet.create({
   },
   assetNameSmall: {
     fontSize: 12,
+  },
+  assetNameTablet: {
+    fontSize: 18,
   },
   assetValues: {
     alignItems: 'flex-end',
@@ -656,6 +939,9 @@ const styles = StyleSheet.create({
   assetValueSmall: {
     fontSize: 12,
   },
+  assetValueTablet: {
+    fontSize: 18,
+  },
   assetPercentage: {
     fontFamily: 'Nunito-Regular',
     fontSize: 12,
@@ -664,6 +950,25 @@ const styles = StyleSheet.create({
   assetPercentageSmall: {
     fontSize: 10,
   },
+  assetPercentageTablet: {
+    fontSize: 16,
+  },
+  moreAssetsText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    color: Colors.neutral[500],
+    textAlign: 'center',
+    marginTop: Layout.spacing.sm,
+    fontStyle: 'italic',
+  },
+  moreAssetsTextSmall: {
+    fontSize: 10,
+    marginTop: Layout.spacing.xs,
+  },
+  moreAssetsTextTablet: {
+    fontSize: 16,
+    marginTop: Layout.spacing.md,
+  },
   performanceInsights: {
     backgroundColor: Colors.neutral[50],
     borderRadius: Layout.borderRadius.md,
@@ -671,6 +976,10 @@ const styles = StyleSheet.create({
   },
   performanceInsightsSmall: {
     padding: Layout.spacing.sm,
+  },
+  performanceInsightsTablet: {
+    padding: Layout.spacing.lg,
+    borderRadius: Layout.borderRadius.lg,
   },
   insightsTitle: {
     fontFamily: 'Nunito-Bold',
@@ -682,6 +991,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: Layout.spacing.xs,
   },
+  insightsTitleTablet: {
+    fontSize: 20,
+    marginBottom: Layout.spacing.md,
+  },
   insightsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -689,6 +1002,9 @@ const styles = StyleSheet.create({
   },
   insightsGridSmall: {
     gap: Layout.spacing.xs,
+  },
+  insightsGridTablet: {
+    gap: Layout.spacing.md,
   },
   insightItem: {
     alignItems: 'center',
@@ -700,17 +1016,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.neutral[600],
     marginBottom: 4,
+    textAlign: 'center',
   },
   insightLabelSmall: {
     fontSize: 10,
+  },
+  insightLabelTablet: {
+    fontSize: 16,
   },
   insightValue: {
     fontFamily: 'Nunito-Bold',
     fontSize: 14,
     color: Colors.neutral[800],
+    textAlign: 'center',
   },
   insightValueSmall: {
     fontSize: 12,
+  },
+  insightValueTablet: {
+    fontSize: 18,
   },
   insightValuePositive: {
     color: '#10B981',

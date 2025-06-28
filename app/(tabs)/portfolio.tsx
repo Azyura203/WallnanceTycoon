@@ -16,8 +16,10 @@ export default function PortfolioScreen() {
   const { balance, portfolio } = usePlayerFinances();
   const prices = useMarketPrices();
   const navigation = useNavigation();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const isSmallScreen = width < 400;
+  const isMediumScreen = width < 600;
+  const isTablet = width >= 768;
 
   const shares = useCompanyShares();
   const enrichedPortfolio = Object.entries(portfolio).map(([name, entry]) => {
@@ -82,7 +84,7 @@ export default function PortfolioScreen() {
     ? enrichedPortfolio.reduce((acc, cur) => acc + cur.roi, 0) / enrichedPortfolio.length 
     : 0;
 
-  // Prepare data for portfolio chart
+  // Prepare data for portfolio chart with responsive sizing
   const portfolioAssets = enrichedPortfolio.map(asset => ({
     name: asset.name,
     value: asset.totalValue,
@@ -112,33 +114,85 @@ export default function PortfolioScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        <View style={[styles.header, isSmallScreen && styles.headerSmall]}>
-          <Text style={[styles.title, isSmallScreen && styles.titleSmall]}>Portfolio</Text>
-          <Text style={[styles.subtitle, isSmallScreen && styles.subtitleSmall]}>Your Current Assets</Text>
-          <Text style={[styles.balance, isSmallScreen && styles.balanceSmall]}>
+        <View style={[
+          styles.header, 
+          isSmallScreen && styles.headerSmall,
+          isTablet && styles.headerTablet
+        ]}>
+          <Text style={[
+            styles.title, 
+            isSmallScreen && styles.titleSmall,
+            isTablet && styles.titleTablet
+          ]}>
+            Portfolio
+          </Text>
+          <Text style={[
+            styles.subtitle, 
+            isSmallScreen && styles.subtitleSmall,
+            isTablet && styles.subtitleTablet
+          ]}>
+            Your Current Assets
+          </Text>
+          <Text style={[
+            styles.balance, 
+            isSmallScreen && styles.balanceSmall,
+            isTablet && styles.balanceTablet
+          ]}>
             💰 Balance: ${balance.toLocaleString()}
           </Text>
         </View>
 
-        <View style={[styles.portfolioValueSection, isSmallScreen && styles.portfolioValueSectionSmall]}>
-          <Text style={[styles.portfolioValueLabel, isSmallScreen && styles.portfolioValueLabelSmall]}>
+        <View style={[
+          styles.portfolioValueSection, 
+          isSmallScreen && styles.portfolioValueSectionSmall,
+          isTablet && styles.portfolioValueSectionTablet
+        ]}>
+          <Text style={[
+            styles.portfolioValueLabel, 
+            isSmallScreen && styles.portfolioValueLabelSmall,
+            isTablet && styles.portfolioValueLabelTablet
+          ]}>
             📊 Total Portfolio Value:
           </Text>
-          <Text style={[styles.portfolioValueAmount, isSmallScreen && styles.portfolioValueAmountSmall]}>
+          <Text style={[
+            styles.portfolioValueAmount, 
+            isSmallScreen && styles.portfolioValueAmountSmall,
+            isTablet && styles.portfolioValueAmountTablet
+          ]}>
             ${totalPortfolioValue.toFixed(2)}
           </Text>
           
-          <View style={[styles.plSnapshotSection, isSmallScreen && styles.plSnapshotSectionSmall]}>
-            <Text style={[styles.plSnapshotLabel, isSmallScreen && styles.plSnapshotLabelSmall]}>
+          <View style={[
+            styles.plSnapshotSection, 
+            isSmallScreen && styles.plSnapshotSectionSmall,
+            isTablet && styles.plSnapshotSectionTablet
+          ]}>
+            <Text style={[
+              styles.plSnapshotLabel, 
+              isSmallScreen && styles.plSnapshotLabelSmall,
+              isTablet && styles.plSnapshotLabelTablet
+            ]}>
               📈 P&L Snapshot:
             </Text>
-            <View style={[styles.plSnapshotRow, isSmallScreen && styles.plSnapshotRowSmall]}>
-              <Text style={[styles.plSnapshotItem, isSmallScreen && styles.plSnapshotItemSmall]}>
+            <View style={[
+              styles.plSnapshotRow, 
+              isSmallScreen && styles.plSnapshotRowSmall,
+              isTablet && styles.plSnapshotRowTablet
+            ]}>
+              <Text style={[
+                styles.plSnapshotItem, 
+                isSmallScreen && styles.plSnapshotItemSmall,
+                isTablet && styles.plSnapshotItemTablet
+              ]}>
                 Today: <Text style={{ color: todayPL >= 0 ? 'green' : 'red' }}>
                   {todayPL >= 0 ? '+' : ''}${todayPL.toFixed(2)}
                 </Text>
               </Text>
-              <Text style={[styles.plSnapshotItem, isSmallScreen && styles.plSnapshotItemSmall]}>
+              <Text style={[
+                styles.plSnapshotItem, 
+                isSmallScreen && styles.plSnapshotItemSmall,
+                isTablet && styles.plSnapshotItemTablet
+              ]}>
                 30 Days: <Text style={{ color: monthPL >= 0 ? 'green' : 'red' }}>
                   {monthPL >= 0 ? '+' : ''}${monthPL.toFixed(2)}
                 </Text>
@@ -147,7 +201,7 @@ export default function PortfolioScreen() {
           </View>
         </View>
 
-        {/* Enhanced Portfolio Chart */}
+        {/* Enhanced Portfolio Chart with Responsive Sizing */}
         {enrichedPortfolio.length > 0 && (
           <PortfolioChart
             assets={portfolioAssets}
@@ -155,6 +209,11 @@ export default function PortfolioScreen() {
             totalChange={totalPortfolioChange}
             timeRange={selectedRange}
             onTimeRangeChange={setSelectedRange}
+            width={width}
+            height={height}
+            isSmallScreen={isSmallScreen}
+            isMediumScreen={isMediumScreen}
+            isTablet={isTablet}
           />
         )}
 
@@ -181,14 +240,32 @@ export default function PortfolioScreen() {
 
         <View style={styles.portfolioSection}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.portfolioTitle, isSmallScreen && styles.portfolioTitleSmall]}>
+            <Text style={[
+              styles.portfolioTitle, 
+              isSmallScreen && styles.portfolioTitleSmall,
+              isTablet && styles.portfolioTitleTablet
+            ]}>
               Current Holdings
             </Text>
           </View>
 
-          <View style={[styles.sortSection, isSmallScreen && styles.sortSectionSmall]}>
-            <Text style={[styles.sortLabel, isSmallScreen && styles.sortLabelSmall]}>Sort By:</Text>
-            <View style={[styles.sortButtons, isSmallScreen && styles.sortButtonsSmall]}>
+          <View style={[
+            styles.sortSection, 
+            isSmallScreen && styles.sortSectionSmall,
+            isTablet && styles.sortSectionTablet
+          ]}>
+            <Text style={[
+              styles.sortLabel, 
+              isSmallScreen && styles.sortLabelSmall,
+              isTablet && styles.sortLabelTablet
+            ]}>
+              Sort By:
+            </Text>
+            <View style={[
+              styles.sortButtons, 
+              isSmallScreen && styles.sortButtonsSmall,
+              isTablet && styles.sortButtonsTablet
+            ]}>
               {['Name', 'Gain/Loss', 'Value'].map((option) => (
                 <TouchableOpacity
                   key={option}
@@ -196,13 +273,15 @@ export default function PortfolioScreen() {
                   style={[
                     styles.sortButton,
                     sortBy === option && styles.sortButtonActive,
-                    isSmallScreen && styles.sortButtonSmall
+                    isSmallScreen && styles.sortButtonSmall,
+                    isTablet && styles.sortButtonTablet
                   ]}
                 >
                   <Text style={[
                     styles.sortButtonText,
                     sortBy === option && styles.sortButtonTextActive,
-                    isSmallScreen && styles.sortButtonTextSmall
+                    isSmallScreen && styles.sortButtonTextSmall,
+                    isTablet && styles.sortButtonTextTablet
                   ]}>
                     {option}
                   </Text>
@@ -220,13 +299,21 @@ export default function PortfolioScreen() {
               }
             })
             .map((coin) => (
-            <View key={coin.id} style={[styles.assetCard, isSmallScreen && styles.assetCardSmall]}>
+            <View key={coin.id} style={[
+              styles.assetCard, 
+              isSmallScreen && styles.assetCardSmall,
+              isTablet && styles.assetCardTablet
+            ]}>
               <TouchableOpacity
                 style={styles.assetHeader}
                 onPress={() => setSelectedAsset(selectedAsset === coin.name ? null : coin.name)}
               >
                 <View style={styles.assetHeaderContent}>
-                  <Text style={[styles.assetName, isSmallScreen && styles.assetNameSmall]}>
+                  <Text style={[
+                    styles.assetName, 
+                    isSmallScreen && styles.assetNameSmall,
+                    isTablet && styles.assetNameTablet
+                  ]}>
                     {coin.emoji} {coin.name}
                   </Text>
                   <View style={styles.assetHeaderRight}>
@@ -238,47 +325,85 @@ export default function PortfolioScreen() {
                         opacity: badgeAnim,
                         transform: [{ translateY: badgeAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
                       },
-                      isSmallScreen && styles.assetBadgeSmall
+                      isSmallScreen && styles.assetBadgeSmall,
+                      isTablet && styles.assetBadgeTablet
                     ]}>
                       {coin.gainLoss >= 0 ? '+' : ''}
                       {coin.totalValue !== 0 ? ((coin.gainLoss / coin.totalValue) * 100).toFixed(2) : '0.00'}%
                     </Animated.Text>
-                    <Text style={[styles.expandIcon, isSmallScreen && styles.expandIconSmall]}>
+                    <Text style={[
+                      styles.expandIcon, 
+                      isSmallScreen && styles.expandIconSmall,
+                      isTablet && styles.expandIconTablet
+                    ]}>
                       {selectedAsset === coin.name ? '📊' : '📈'}
                     </Text>
                   </View>
                 </View>
               </TouchableOpacity>
               
-              <View style={[styles.assetDetails, isSmallScreen && styles.assetDetailsSmall]}>
-                <Text style={[styles.holdingText, isSmallScreen && styles.holdingTextSmall]}>
+              <View style={[
+                styles.assetDetails, 
+                isSmallScreen && styles.assetDetailsSmall,
+                isTablet && styles.assetDetailsTablet
+              ]}>
+                <Text style={[
+                  styles.holdingText, 
+                  isSmallScreen && styles.holdingTextSmall,
+                  isTablet && styles.holdingTextTablet
+                ]}>
                   Holdings: {coin.quantity}
                 </Text>
-                <Text style={[styles.priceText, isSmallScreen && styles.priceTextSmall]}>
+                <Text style={[
+                  styles.priceText, 
+                  isSmallScreen && styles.priceTextSmall,
+                  isTablet && styles.priceTextTablet
+                ]}>
                   Avg Buy Price: ${coin.avgPrice.toFixed(2)}
                 </Text>
-                <Text style={[styles.priceText, isSmallScreen && styles.priceTextSmall]}>
+                <Text style={[
+                  styles.priceText, 
+                  isSmallScreen && styles.priceTextSmall,
+                  isTablet && styles.priceTextTablet
+                ]}>
                   Current Price: ${coin.currentPrice.toFixed(2)}
                 </Text>
                 <Text style={[
                   styles.priceText,
                   { color: coin.gainLoss >= 0 ? 'green' : 'red' },
-                  isSmallScreen && styles.priceTextSmall
+                  isSmallScreen && styles.priceTextSmall,
+                  isTablet && styles.priceTextTablet
                 ]}>
                   {coin.gainLoss >= 0 ? 'Profit' : 'Loss'}: ${coin.gainLoss.toFixed(2)}
                 </Text>
                 
-                <View style={[styles.metricsRow, isSmallScreen && styles.metricsRowSmall]}>
-                  <Text style={[styles.metricText, isSmallScreen && styles.metricTextSmall]}>
+                <View style={[
+                  styles.metricsRow, 
+                  isSmallScreen && styles.metricsRowSmall,
+                  isTablet && styles.metricsRowTablet
+                ]}>
+                  <Text style={[
+                    styles.metricText, 
+                    isSmallScreen && styles.metricTextSmall,
+                    isTablet && styles.metricTextTablet
+                  ]}>
                     Total Cost: ${coin.avgPrice * coin.quantity === 0 ? '0.00' : (coin.avgPrice * coin.quantity).toFixed(2)}
                   </Text>
-                  <Text style={[styles.metricText, isSmallScreen && styles.metricTextSmall]}>
+                  <Text style={[
+                    styles.metricText, 
+                    isSmallScreen && styles.metricTextSmall,
+                    isTablet && styles.metricTextTablet
+                  ]}>
                     Current Value: ${coin.totalValue.toFixed(2)}
                   </Text>
                 </View>
               </View>
               
-              <View style={[styles.buttonContainer, isSmallScreen && styles.buttonContainerSmall]}>
+              <View style={[
+                styles.buttonContainer, 
+                isSmallScreen && styles.buttonContainerSmall,
+                isTablet && styles.buttonContainerTablet
+              ]}>
                 <GameButton
                   title="📈 Buy More"
                   onPress={() => {
@@ -287,8 +412,16 @@ export default function PortfolioScreen() {
                       coin: coin.name,
                     });
                   }}
-                  style={[styles.buyButton, isSmallScreen && styles.actionButtonSmall]}
-                  textStyle={[styles.buttonText, isSmallScreen && styles.buttonTextSmall]}
+                  style={[
+                    styles.buyButton, 
+                    isSmallScreen && styles.actionButtonSmall,
+                    isTablet && styles.actionButtonTablet
+                  ]}
+                  textStyle={[
+                    styles.buttonText, 
+                    isSmallScreen && styles.buttonTextSmall,
+                    isTablet && styles.buttonTextTablet
+                  ]}
                 />
                 <GameButton
                   title="📉 Sell Asset"
@@ -298,14 +431,30 @@ export default function PortfolioScreen() {
                       coin: coin.name,
                     });
                   }}
-                  style={[styles.sellButton, isSmallScreen && styles.actionButtonSmall]}
-                  textStyle={[styles.buttonText, isSmallScreen && styles.buttonTextSmall]}
+                  style={[
+                    styles.sellButton, 
+                    isSmallScreen && styles.actionButtonSmall,
+                    isTablet && styles.actionButtonTablet
+                  ]}
+                  textStyle={[
+                    styles.buttonText, 
+                    isSmallScreen && styles.buttonTextSmall,
+                    isTablet && styles.buttonTextTablet
+                  ]}
                 />
                 <TouchableOpacity
-                  style={[styles.analyzeButton, isSmallScreen && styles.analyzeButtonSmall]}
+                  style={[
+                    styles.analyzeButton, 
+                    isSmallScreen && styles.analyzeButtonSmall,
+                    isTablet && styles.analyzeButtonTablet
+                  ]}
                   onPress={() => setSelectedAsset(selectedAsset === coin.name ? null : coin.name)}
                 >
-                  <Text style={[styles.analyzeButtonText, isSmallScreen && styles.analyzeButtonTextSmall]}>
+                  <Text style={[
+                    styles.analyzeButtonText, 
+                    isSmallScreen && styles.analyzeButtonTextSmall,
+                    isTablet && styles.analyzeButtonTextTablet
+                  ]}>
                     📊 Analyze
                   </Text>
                 </TouchableOpacity>
@@ -314,11 +463,23 @@ export default function PortfolioScreen() {
           ))}
           
           {enrichedPortfolio.length === 0 && (
-            <View style={[styles.emptyPortfolio, isSmallScreen && styles.emptyPortfolioSmall]}>
-              <Text style={[styles.emptyPortfolioText, isSmallScreen && styles.emptyPortfolioTextSmall]}>
+            <View style={[
+              styles.emptyPortfolio, 
+              isSmallScreen && styles.emptyPortfolioSmall,
+              isTablet && styles.emptyPortfolioTablet
+            ]}>
+              <Text style={[
+                styles.emptyPortfolioText, 
+                isSmallScreen && styles.emptyPortfolioTextSmall,
+                isTablet && styles.emptyPortfolioTextTablet
+              ]}>
                 No assets yet
               </Text>
-              <Text style={[styles.emptyPortfolioSubtext, isSmallScreen && styles.emptyPortfolioSubtextSmall]}>
+              <Text style={[
+                styles.emptyPortfolioSubtext, 
+                isSmallScreen && styles.emptyPortfolioSubtextSmall,
+                isTablet && styles.emptyPortfolioSubtextTablet
+              ]}>
                 Buy some coins to start building your portfolio!
               </Text>
             </View>
@@ -349,6 +510,10 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.lg,
     marginTop: Layout.spacing.lg,
   },
+  headerTablet: {
+    marginBottom: Layout.spacing.xxl,
+    marginTop: Layout.spacing.xxl,
+  },
   title: {
     fontFamily: 'Nunito-Bold',
     fontSize: 32,
@@ -358,6 +523,9 @@ const styles = StyleSheet.create({
   titleSmall: {
     fontSize: 24,
   },
+  titleTablet: {
+    fontSize: 40,
+  },
   subtitle: {
     fontFamily: 'Nunito-Regular',
     fontSize: 18,
@@ -365,6 +533,9 @@ const styles = StyleSheet.create({
   },
   subtitleSmall: {
     fontSize: 14,
+  },
+  subtitleTablet: {
+    fontSize: 22,
   },
   balance: {
     fontFamily: 'Nunito-Bold',
@@ -376,11 +547,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: Layout.spacing.sm,
   },
+  balanceTablet: {
+    fontSize: 24,
+    marginTop: Layout.spacing.lg,
+  },
   portfolioValueSection: {
     marginBottom: Layout.spacing.lg,
   },
   portfolioValueSectionSmall: {
     marginBottom: Layout.spacing.md,
+  },
+  portfolioValueSectionTablet: {
+    marginBottom: Layout.spacing.xl,
   },
   portfolioValueLabel: {
     fontFamily: 'Nunito-Bold',
@@ -391,6 +569,9 @@ const styles = StyleSheet.create({
   portfolioValueLabelSmall: {
     fontSize: 14,
   },
+  portfolioValueLabelTablet: {
+    fontSize: 20,
+  },
   portfolioValueAmount: {
     fontFamily: 'Nunito-Bold',
     fontSize: 24,
@@ -399,6 +580,9 @@ const styles = StyleSheet.create({
   portfolioValueAmountSmall: {
     fontSize: 20,
   },
+  portfolioValueAmountTablet: {
+    fontSize: 32,
+  },
   plSnapshotSection: {
     marginTop: Layout.spacing.sm,
     marginBottom: Layout.spacing.lg,
@@ -406,6 +590,10 @@ const styles = StyleSheet.create({
   plSnapshotSectionSmall: {
     marginTop: Layout.spacing.xs,
     marginBottom: Layout.spacing.md,
+  },
+  plSnapshotSectionTablet: {
+    marginTop: Layout.spacing.md,
+    marginBottom: Layout.spacing.xl,
   },
   plSnapshotLabel: {
     fontFamily: 'Nunito-Bold',
@@ -416,6 +604,9 @@ const styles = StyleSheet.create({
   plSnapshotLabelSmall: {
     fontSize: 14,
   },
+  plSnapshotLabelTablet: {
+    fontSize: 20,
+  },
   plSnapshotRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -424,6 +615,10 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 4,
   },
+  plSnapshotRowTablet: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
   plSnapshotItem: {
     fontFamily: 'Nunito-Regular',
     fontSize: 14,
@@ -431,6 +626,9 @@ const styles = StyleSheet.create({
   },
   plSnapshotItemSmall: {
     fontSize: 12,
+  },
+  plSnapshotItemTablet: {
+    fontSize: 18,
   },
   portfolioSection: {
     marginBottom: Layout.spacing.xl,
@@ -449,6 +647,9 @@ const styles = StyleSheet.create({
   portfolioTitleSmall: {
     fontSize: 18,
   },
+  portfolioTitleTablet: {
+    fontSize: 26,
+  },
   sortSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -461,6 +662,12 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: Layout.spacing.sm,
   },
+  sortSectionTablet: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Layout.spacing.lg,
+  },
   sortLabel: {
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
@@ -469,12 +676,18 @@ const styles = StyleSheet.create({
   sortLabelSmall: {
     fontSize: 14,
   },
+  sortLabelTablet: {
+    fontSize: 20,
+  },
   sortButtons: {
     flexDirection: 'row',
     gap: 8,
   },
   sortButtonsSmall: {
     gap: 6,
+  },
+  sortButtonsTablet: {
+    gap: 12,
   },
   sortButton: {
     paddingHorizontal: 10,
@@ -487,6 +700,11 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 4,
   },
+  sortButtonTablet: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
   sortButtonActive: {
     backgroundColor: Colors.primary[500],
   },
@@ -497,6 +715,9 @@ const styles = StyleSheet.create({
   },
   sortButtonTextSmall: {
     fontSize: 11,
+  },
+  sortButtonTextTablet: {
+    fontSize: 16,
   },
   sortButtonTextActive: {
     color: '#fff',
@@ -517,6 +738,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: Layout.spacing.sm,
+  },
+  assetCardTablet: {
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: Layout.spacing.lg,
   },
   assetHeader: {
     marginBottom: Layout.spacing.md,
@@ -539,6 +765,9 @@ const styles = StyleSheet.create({
   assetNameSmall: {
     fontSize: 14,
   },
+  assetNameTablet: {
+    fontSize: 20,
+  },
   assetBadge: {
     fontSize: 12,
     fontFamily: 'Nunito-Bold',
@@ -551,11 +780,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 1,
   },
+  assetBadgeTablet: {
+    fontSize: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
   expandIcon: {
     fontSize: 16,
   },
   expandIconSmall: {
     fontSize: 14,
+  },
+  expandIconTablet: {
+    fontSize: 20,
   },
   assetDetails: {
     gap: Layout.spacing.sm,
@@ -565,6 +803,10 @@ const styles = StyleSheet.create({
     gap: Layout.spacing.xs,
     marginBottom: Layout.spacing.sm,
   },
+  assetDetailsTablet: {
+    gap: Layout.spacing.md,
+    marginBottom: Layout.spacing.lg,
+  },
   holdingText: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 14,
@@ -573,6 +815,9 @@ const styles = StyleSheet.create({
   holdingTextSmall: {
     fontSize: 12,
   },
+  holdingTextTablet: {
+    fontSize: 18,
+  },
   priceText: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 14,
@@ -580,6 +825,9 @@ const styles = StyleSheet.create({
   },
   priceTextSmall: {
     fontSize: 12,
+  },
+  priceTextTablet: {
+    fontSize: 18,
   },
   metricsRow: {
     flexDirection: 'row',
@@ -591,6 +839,11 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: 4,
   },
+  metricsRowTablet: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
   metricText: {
     fontFamily: 'Nunito-Regular',
     fontSize: 13,
@@ -598,6 +851,9 @@ const styles = StyleSheet.create({
   },
   metricTextSmall: {
     fontSize: 11,
+  },
+  metricTextTablet: {
+    fontSize: 16,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -611,6 +867,11 @@ const styles = StyleSheet.create({
     gap: Layout.spacing.sm,
     paddingTop: Layout.spacing.sm,
     marginTop: Layout.spacing.sm,
+  },
+  buttonContainerTablet: {
+    gap: Layout.spacing.lg,
+    paddingTop: Layout.spacing.lg,
+    marginTop: Layout.spacing.lg,
   },
   buyButton: {
     backgroundColor: Colors.success[500],
@@ -655,6 +916,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 25,
   },
+  analyzeButtonTablet: {
+    paddingVertical: 16,
+    borderRadius: 60,
+  },
   analyzeButtonText: {
     fontFamily: 'Nunito-Bold',
     fontSize: 14,
@@ -663,9 +928,16 @@ const styles = StyleSheet.create({
   analyzeButtonTextSmall: {
     fontSize: 12,
   },
+  analyzeButtonTextTablet: {
+    fontSize: 18,
+  },
   actionButtonSmall: {
     paddingVertical: 8,
     borderRadius: 25,
+  },
+  actionButtonTablet: {
+    paddingVertical: 16,
+    borderRadius: 60,
   },
   buttonText: {
     fontFamily: 'Nunito-Bold',
@@ -674,6 +946,9 @@ const styles = StyleSheet.create({
   },
   buttonTextSmall: {
     fontSize: 12,
+  },
+  buttonTextTablet: {
+    fontSize: 18,
   },
   emptyPortfolio: {
     alignItems: 'center',
@@ -685,6 +960,10 @@ const styles = StyleSheet.create({
   emptyPortfolioSmall: {
     padding: Layout.spacing.lg,
   },
+  emptyPortfolioTablet: {
+    padding: Layout.spacing.xxl,
+    borderRadius: Layout.borderRadius.lg,
+  },
   emptyPortfolioText: {
     fontFamily: 'Nunito-Bold',
     fontSize: 18,
@@ -694,6 +973,9 @@ const styles = StyleSheet.create({
   emptyPortfolioTextSmall: {
     fontSize: 16,
   },
+  emptyPortfolioTextTablet: {
+    fontSize: 24,
+  },
   emptyPortfolioSubtext: {
     fontFamily: 'Nunito-Regular',
     fontSize: 14,
@@ -701,5 +983,8 @@ const styles = StyleSheet.create({
   },
   emptyPortfolioSubtextSmall: {
     fontSize: 12,
+  },
+  emptyPortfolioSubtextTablet: {
+    fontSize: 18,
   },
 });
