@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, useWindowDimensions } from 'react-native';
-import { BookOpen, Trophy, Target, Clock, CheckCircle, Star } from 'lucide-react-native';
+import { BookOpen, Trophy, Target, Clock, CircleCheck as CheckCircle, Star } from 'lucide-react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import { useLearningSystem } from '@/src/hooks/useLearningSystem';

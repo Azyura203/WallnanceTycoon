@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { X, CheckCircle, Clock, BookOpen } from 'lucide-react-native';
+import { X, CircleCheck as CheckCircle, Clock, BookOpen } from 'lucide-react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import { LearningLesson } from '@/src/types/game';
