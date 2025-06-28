@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, useWindowDimensions } from 'react-native';
-import { BookOpen, Trophy, Target, Clock, CircleCheck as CheckCircle, Star } from 'lucide-react-native';
+import { BookOpen, Trophy, Target, Clock, CircleCheck as CheckCircle, Star, Gift } from 'lucide-react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import { useLearningSystem } from '@/src/hooks/useLearningSystem';
 import { useAchievements } from '@/src/hooks/useAchievements';
+import { useRewardsSystem } from '@/src/hooks/useRewardsSystem';
 import { LearningQuest, LearningLesson } from '@/src/types/game';
 import LessonModal from '@/src/components/learning/LessonModal';
 import AchievementNotification from '@/src/components/notifications/AchievementNotification';
+import RewardsModal from '@/src/components/rewards/RewardsModal';
 
 export default function LearnAndEarnScreen() {
   const { width } = useWindowDimensions();
@@ -25,12 +27,20 @@ export default function LearnAndEarnScreen() {
   } = useLearningSystem();
   
   const { checkAchievement } = useAchievements();
+  const { rewards, checkDailyBonus, getRewardMultiplier } = useRewardsSystem();
   
   const [selectedTab, setSelectedTab] = useState<'quests' | 'challenges' | 'progress'>('quests');
   const [selectedQuest, setSelectedQuest] = useState<LearningQuest | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<LearningLesson | null>(null);
   const [showLessonModal, setShowLessonModal] = useState(false);
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
   const [newAchievement, setNewAchievement] = useState<any>(null);
+  const [lessonCompleteResult, setLessonCompleteResult] = useState<any>(null);
+
+  // Check for daily bonus on mount
+  useEffect(() => {
+    checkDailyBonus();
+  }, []);
 
   const handleLessonPress = (quest: LearningQuest, lesson: LearningLesson) => {
     setSelectedQuest(quest);
@@ -42,7 +52,8 @@ export default function LearnAndEarnScreen() {
     if (!selectedQuest) return;
     
     try {
-      await completeLesson(selectedQuest.id, lessonId);
+      const result = await completeLesson(selectedQuest.id, lessonId);
+      setLessonCompleteResult(result);
       
       // Check for achievements
       const newAchievements = await checkAchievement('lesson', totalLessonsCompleted + 1);
@@ -51,6 +62,13 @@ export default function LearnAndEarnScreen() {
       }
       
       setShowLessonModal(false);
+      
+      // Show success message with points earned
+      if (result) {
+        setTimeout(() => {
+          setLessonCompleteResult(null);
+        }, 3000);
+      }
     } catch (error) {
       console.error('Error completing lesson:', error);
     }
@@ -122,7 +140,7 @@ export default function LearnAndEarnScreen() {
               <View style={styles.lessonMeta}>
                 <Clock size={isSmallScreen ? 12 : 14} color={Colors.neutral[500]} />
                 <Text style={[styles.lessonTime, isSmallScreen && styles.lessonTimeSmall]}>
-                  {lesson.estimatedTime} min
+                  {lesson.estimatedTime} min • {Math.floor(lesson.estimatedTime * 10 * getRewardMultiplier())} pts
                 </Text>
               </View>
             </View>
@@ -136,12 +154,17 @@ export default function LearnAndEarnScreen() {
       {/* Rewards */}
       <View style={[styles.rewardsContainer, isSmallScreen && styles.rewardsContainerSmall]}>
         <Text style={[styles.rewardsTitle, isSmallScreen && styles.rewardsTitleSmall]}>
-          Rewards:
+          Quest Completion Rewards:
         </Text>
         <Text style={[styles.rewardsText, isSmallScreen && styles.rewardsTextSmall]}>
-          {quest.rewards.points} points • ${quest.rewards.coins.toLocaleString()}
+          {Math.floor(quest.rewards.points * getRewardMultiplier())} points • ${quest.rewards.coins.toLocaleString()} coins
           {quest.rewards.achievement && ` • ${quest.rewards.achievement} achievement`}
         </Text>
+        {getRewardMultiplier() > 1 && (
+          <Text style={[styles.bonusText, isSmallScreen && styles.bonusTextSmall]}>
+            🔥 {getRewardMultiplier()}x streak bonus active!
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -198,20 +221,62 @@ export default function LearnAndEarnScreen() {
       {/* Reward */}
       <View style={[styles.challengeReward, isSmallScreen && styles.challengeRewardSmall]}>
         <Text style={[styles.rewardText, isSmallScreen && styles.rewardTextSmall]}>
-          Reward: {challenge.reward.points} points, ${challenge.reward.coins.toLocaleString()}
+          Reward: {Math.floor(challenge.reward.points * getRewardMultiplier())} points, ${challenge.reward.coins.toLocaleString()}
+          {challenge.reward.multiplier && ` (${challenge.reward.multiplier}x bonus)`}
         </Text>
       </View>
     </View>
   );
 
+  const hasUnclaimedRewards = rewards.unclaimedRewards.points > 0 || 
+                             rewards.unclaimedRewards.coins > 0 || 
+                             rewards.unclaimedRewards.wlc > 0;
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+        {/* Success Message for Lesson Completion */}
+        {lessonCompleteResult && (
+          <View style={[styles.successBanner, isSmallScreen && styles.successBannerSmall]}>
+            <Text style={[styles.successText, isSmallScreen && styles.successTextSmall]}>
+              🎉 Lesson Completed! +{lessonCompleteResult.pointsEarned} points earned
+            </Text>
+            {lessonCompleteResult.streakBonus && (
+              <Text style={[styles.bonusText, isSmallScreen && styles.bonusTextSmall]}>
+                🔥 Streak bonus applied!
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* Header */}
         <View style={[styles.header, isSmallScreen && styles.headerSmall]}>
-          <Text style={[styles.title, isSmallScreen && styles.titleSmall]}>Learn & Earn</Text>
+          <View style={styles.headerTop}>
+            <Text style={[styles.title, isSmallScreen && styles.titleSmall]}>Learn & Earn</Text>
+            <TouchableOpacity 
+              style={[
+                styles.rewardsButton,
+                hasUnclaimedRewards && styles.rewardsButtonActive,
+                isSmallScreen && styles.rewardsButtonSmall
+              ]}
+              onPress={() => setShowRewardsModal(true)}
+            >
+              <Gift size={isSmallScreen ? 16 : 20} color={hasUnclaimedRewards ? Colors.warning[600] : Colors.primary[600]} />
+              <Text style={[
+                styles.rewardsButtonText,
+                hasUnclaimedRewards && styles.rewardsButtonTextActive,
+                isSmallScreen && styles.rewardsButtonTextSmall
+              ]}>
+                {hasUnclaimedRewards ? 'Claim!' : 'Rewards'}
+              </Text>
+              {hasUnclaimedRewards && (
+                <View style={[styles.notificationDot, isSmallScreen && styles.notificationDotSmall]} />
+              )}
+            </TouchableOpacity>
+          </View>
+          
           <Text style={[styles.subtitle, isSmallScreen && styles.subtitleSmall]}>
-            Master trading skills and earn rewards
+            Master trading skills and earn real rewards
           </Text>
           
           {/* Stats */}
@@ -228,10 +293,10 @@ export default function LearnAndEarnScreen() {
             <View style={[styles.statItem, isSmallScreen && styles.statItemSmall]}>
               <Trophy size={isSmallScreen ? 16 : 20} color={Colors.warning[500]} />
               <Text style={[styles.statValue, isSmallScreen && styles.statValueSmall]}>
-                {getCompletedQuests().length}
+                {rewards.totalPoints.toLocaleString()}
               </Text>
               <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>
-                Quests
+                Points
               </Text>
             </View>
             <View style={[styles.statItem, isSmallScreen && styles.statItemSmall]}>
@@ -241,6 +306,15 @@ export default function LearnAndEarnScreen() {
               </Text>
               <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>
                 Streak
+              </Text>
+            </View>
+            <View style={[styles.statItem, isSmallScreen && styles.statItemSmall]}>
+              <Gift size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
+              <Text style={[styles.statValue, isSmallScreen && styles.statValueSmall]}>
+                {rewards.totalWLC}
+              </Text>
+              <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>
+                WLC
               </Text>
             </View>
           </View>
@@ -400,6 +474,12 @@ export default function LearnAndEarnScreen() {
         onComplete={handleLessonComplete}
       />
 
+      {/* Rewards Modal */}
+      <RewardsModal
+        visible={showRewardsModal}
+        onClose={() => setShowRewardsModal(false)}
+      />
+
       {/* Achievement Notification */}
       <AchievementNotification
         achievement={newAchievement}
@@ -422,6 +502,35 @@ const styles = StyleSheet.create({
     padding: Layout.spacing.lg,
     paddingBottom: Layout.spacing.xxl,
   },
+  successBanner: {
+    backgroundColor: Colors.success[100],
+    borderRadius: Layout.borderRadius.md,
+    padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.success[500],
+  },
+  successBannerSmall: {
+    padding: Layout.spacing.sm,
+    marginBottom: Layout.spacing.md,
+  },
+  successText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 16,
+    color: Colors.success[700],
+    marginBottom: 4,
+  },
+  successTextSmall: {
+    fontSize: 14,
+  },
+  bonusText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
+    color: Colors.warning[600],
+  },
+  bonusTextSmall: {
+    fontSize: 10,
+  },
   header: {
     marginBottom: Layout.spacing.xl,
     marginTop: Layout.spacing.xl,
@@ -430,14 +539,62 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.lg,
     marginTop: Layout.spacing.lg,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Layout.spacing.xs,
+  },
   title: {
     fontFamily: 'Nunito-Bold',
     fontSize: 32,
     color: Colors.primary[700],
-    marginBottom: Layout.spacing.xs,
   },
   titleSmall: {
     fontSize: 24,
+  },
+  rewardsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary[50],
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    position: 'relative',
+  },
+  rewardsButtonSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 2,
+  },
+  rewardsButtonActive: {
+    backgroundColor: Colors.warning[100],
+  },
+  rewardsButtonText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.primary[600],
+  },
+  rewardsButtonTextSmall: {
+    fontSize: 12,
+  },
+  rewardsButtonTextActive: {
+    color: Colors.warning[700],
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.error[500],
+  },
+  notificationDotSmall: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   subtitle: {
     fontFamily: 'Nunito-Regular',
@@ -469,11 +626,11 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 24,
+    fontSize: 20,
     color: Colors.neutral[800],
   },
   statValueSmall: {
-    fontSize: 18,
+    fontSize: 16,
   },
   statLabel: {
     fontFamily: 'Nunito-Regular',

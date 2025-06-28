@@ -2,7 +2,7 @@
   "expo": {
     "name": "Wallnance Tycoon",
     "slug": "wallnance-tycoon",
-    "version": "1.7.0",
+    "version": "1.7.1",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
     "userInterfaceStyle": "light",
