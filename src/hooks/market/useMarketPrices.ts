@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMarketNews } from './useMarketNews';
 
 type MarketItem = {
-  total_volume: number | 100000;
+  total_volume?: number;
   current_price: number;
   category: string;
   id: Key | null | 100000;
@@ -31,7 +31,7 @@ const defaultPrices: MarketItem[] = [
     emoji: '🍣',
     name: 'CrypTofu',
     ticker: 'CTF',
-    price: 1200,
+    price: 0,
     change: 0,
     direction: 'same',
     category: 'Meme',
@@ -59,7 +59,7 @@ const defaultPrices: MarketItem[] = [
     change: 0,
     direction: 'same',
     category: 'Meta',
-    total_volume: 100000,
+    total_volume: 0,
     current_price: 0
   },
   {
@@ -203,7 +203,7 @@ const defaultPrices: MarketItem[] = [
     change: 0,
     direction: 'same',
     category: 'GameFi',
-    total_volume: 100000,
+    total_volume: 0,
     current_price: 0
   }
 ];
@@ -273,42 +273,55 @@ export function useMarketPrices() {
     const fetchCoinGeckoData = async () => {
       try {
         const response = await fetch(
-          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,dogecoin'
+          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,dogecoin,tether,uniswap,solana,binancecoin,wrapped-bitcoin,chainlink,polkadot,shiba-inu,tron,avalanche-2'
         );
         const data = await response.json();
-        const priceMap: Record<string, any> = {
-          bitcoin: data.find((d: any) => d.id === 'bitcoin') || null,
-          ethereum: data.find((d: any) => d.id === 'ethereum') || null,
-          dogecoin: data.find((d: any) => d.id === 'dogecoin') || null,
+        const priceMap: Record<string, any> = {};
+        data.forEach((d: any) => {
+          priceMap[d.id] = d;
+        });
+
+        const tokenMap: Record<string, string> = {
+          CrypTofu: 'wrapped-bitcoin',
+          SoyETH: 'ethereum',
+          BitRice: 'bitcoin',
+          DogeBean: 'shiba-inu',
+          BobaCoin: 'tether',
+          NyanCash: 'solana',
+          UniYen: 'uniswap',
+          StakeToken: 'chainlink',
+          MindCoin: 'binancecoin',
+          ToiletPaper: 'tron',
+          BooBux: 'avalanche-2',
+          PizzaFi: 'polkadot',
+          NinjaSwap: 'uniswap',
+          AlienFi: 'dogecoin',
+          PlayVerse: 'ethereum',
         };
 
         setPrices((prev) => {
           const updated = prev.map((item) => {
-            if (['CrypTofu', 'SoyETH', 'BitRice'].includes(item.name)) {
-              const realData =
-                item.name === 'CrypTofu' ? priceMap.dogecoin :
-                item.name === 'SoyETH' ? priceMap.ethereum :
-                item.name === 'BitRice' ? priceMap.bitcoin : null;
+            const realId = tokenMap[item.name];
+            const realData = realId ? priceMap[realId] : null;
 
-              if (!realData) return item;
+            if (!realData) return item;
 
-              const change = parseFloat((realData.current_price - item.price).toFixed(2));
-              let direction: 'up' | 'down' | 'same' = 'same';
-              if (change > 0) direction = 'up';
-              else if (change < 0) direction = 'down';
+            const change = parseFloat((realData.current_price - item.price).toFixed(2));
+            let direction: 'up' | 'down' | 'same' = 'same';
+            if (change > 0) direction = 'up';
+            else if (change < 0) direction = 'down';
 
-              return {
-                ...item,
-                price: parseFloat(realData.current_price.toFixed(2)),
-                change,
-                direction,
-                high24h: realData.high_24h,
-                low24h: realData.low_24h,
-                volume24h: realData.total_volume,
-                priceChangePercentage24h: realData.price_change_percentage_24h,
-              };
-            }
-            return item;
+            return {
+              ...item,
+              price: parseFloat(realData.current_price.toFixed(2)),
+              change,
+              direction,
+              high24h: realData.high_24h,
+              low24h: realData.low_24h,
+              total_volume: realData.total_volume,
+              volume24h: realData.total_volume,
+              priceChangePercentage24h: realData.price_change_percentage_24h,
+            };
           });
           AsyncStorage.setItem('market_prices', JSON.stringify(updated));
           return updated;
