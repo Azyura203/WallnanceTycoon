@@ -2,7 +2,7 @@ console.log("Loading: app/(tabs)/index.tsx");
 
 import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
-import { LineChart as LineChart, Users } from 'lucide-react-native';
+import { ChartLine as LineChart, Users } from 'lucide-react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import { useCompanyName } from '@/src/hooks/useCompanyName';

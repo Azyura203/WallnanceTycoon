@@ -12,19 +12,22 @@ const tradingLessons = [
 
 const investingLessons = [
   { title: 'What is Investing?', content: 'Investing is about holding assets long-term. It focuses on gradual growth and compounding returns.' },
-  { title: 'Diversification', content: 'Don't put all your eggs in one basket. Spread your investments across different asset types to reduce risk.' },
+  { title: 'Diversification', content: 'Don\'t put all your eggs in one basket. Spread your investments across different asset types to reduce risk.' },
+  }
   { title: 'Compounding Magic', content: 'Reinvesting your profits over time can lead to exponential growth. Patience pays off!' },
 ];
 
 const tokenomicsLessons = [
   { title: 'What is Tokenomics?', content: 'Tokenomics is the science of a token\'s economy—how supply, demand, and utility shape its value.' },
-  { title: 'Total Supply vs Circulating Supply', content: 'Total supply is the max a token can have. Circulating is what's currently in the market. Circulating supply affects price action heavily.' },
+  { title: 'Total Supply vs Circulating Supply', content: 'Total supply is the max a token can have. Circulating is what\'s currently in the market. Circulating supply affects price action heavily.' },
+  }
   { title: 'Burning & Inflation', content: 'Burning reduces supply (often bullish). Inflation increases supply (can be bearish). Both shape a token\'s future.' },
 ];
 
 const cryptoLessons = [
   { title: 'The Birth of Crypto', content: 'In 2008, Satoshi Nakamoto introduced Bitcoin, a decentralized digital currency powered by blockchain.' },
-  { title: 'Satoshi Nakamoto', content: 'The mysterious figure behind Bitcoin. Satoshi's vision was a financial system without intermediaries—trustless and transparent.' },
+  { title: 'Satoshi Nakamoto', content: 'The mysterious figure behind Bitcoin. Satoshi\'s vision was a financial system without intermediaries—trustless and transparent.' },
+  }
   { title: 'Genesis Block', content: 'The first block of Bitcoin was mined in 2009. It contained a hidden message referencing a bailout, symbolizing distrust in traditional banking.' },
 ];
 
