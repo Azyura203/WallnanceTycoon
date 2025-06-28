@@ -71,55 +71,25 @@ export default function TabLayout() {
     return `$${value.toFixed(2)}`;
   };
 
-  // Dynamic sizing based on platform and screen size
+  // Responsive, range-based config for Tab Bar
   const getTabBarConfig = () => {
-    if (isDesktop) {
-      return {
-        height: isWeb ? 70 : 80,
-        iconSize: 24,
-        fontSize: 14,
-        padding: 16,
-        showLabels: true,
-        orientation: 'horizontal',
-        maxWidth: 1200,
-      };
-    } else if (isTablet) {
-      return {
-        height: 75,
-        iconSize: 22,
-        fontSize: 13,
-        padding: 12,
-        showLabels: true,
-        orientation: 'horizontal',
-        maxWidth: 800,
-      };
-    } else if (isMobile && !isSmallMobile) {
-      return {
-        height: 70,
-        iconSize: 20,
-        fontSize: 12,
-        padding: 8,
-        showLabels: true,
-        orientation: 'horizontal',
-        maxWidth: '100%',
-      };
-    } else {
-      return {
-        height: 65,
-        iconSize: 18,
-        fontSize: 10,
-        padding: 6,
-        showLabels: false, // Hide labels on very small screens
-        orientation: 'horizontal',
-        maxWidth: '100%',
-      };
-    }
+    const baseHeight = Math.min(80, Math.max(60, height * 0.1));
+    return {
+      height: baseHeight,
+      iconSize: width >= 1024 ? 24 : width >= 768 ? 22 : width >= 400 ? 20 : 18,
+      fontSize: width >= 1024 ? 14 : width >= 768 ? 13 : 12,
+      padding: width >= 1024 ? 16 : width >= 768 ? 12 : 8,
+      showLabels: width >= 360,
+      orientation: 'horizontal',
+      maxWidth: width > 1440 ? 1280 : width > 1024 ? 1100 : undefined,
+    };
   };
 
   const config = getTabBarConfig();
 
   // Tab configuration with responsive labels
   const getTabTitle = (fullTitle: string, shortTitle: string) => {
+    if (isDesktop) return shortTitle;
     if (isSmallMobile) return shortTitle;
     if (isMobile && fullTitle.length > 8) return shortTitle;
     return fullTitle;
@@ -128,7 +98,7 @@ export default function TabLayout() {
   const tabScreenOptions = {
     tabBarActiveTintColor: Colors.primary[600],
     tabBarInactiveTintColor: Colors.neutral[400],
-    tabBarStyle: [
+    tabBarStyle: StyleSheet.flatten([
       styles.tabBar,
       {
         height: config.height,
@@ -136,34 +106,34 @@ export default function TabLayout() {
         paddingTop: config.padding / 2,
         paddingBottom: isWeb ? config.padding / 2 : Math.max(config.padding / 2, 6),
         maxWidth: config.maxWidth,
-        alignSelf: 'center',
-        width: isDesktop ? 'auto' : '100%',
+        alignSelf: 'stretch' as const,
+        // width: '100%', // Removed to fix type error
         borderTopWidth: isWeb ? 1 : 0.5,
         shadowOpacity: isWeb ? 0.15 : 0.1,
         elevation: isWeb ? 8 : 10,
       },
-      isWeb && styles.tabBarWeb,
-      isDesktop && styles.tabBarDesktop,
-      isTablet && styles.tabBarTablet,
-    ],
-    tabBarLabelStyle: [
+      isWeb ? styles.tabBarWeb : null,
+      isDesktop ? styles.tabBarDesktop : null,
+      isTablet ? styles.tabBarTablet : null,
+    ]),
+    tabBarLabelStyle: StyleSheet.flatten([
       styles.tabBarLabel,
       {
         fontSize: config.fontSize,
         marginTop: config.showLabels ? 2 : 0,
-        display: config.showLabels ? 'flex' : 'none',
+        display: config.showLabels ? 'flex' as const : 'none' as const,
       },
-    ],
-    tabBarItemStyle: [
+    ]),
+    tabBarItemStyle: StyleSheet.flatten([
       styles.tabBarItem,
       {
         paddingVertical: config.padding / 2,
         paddingHorizontal: isDesktop ? 12 : config.padding / 2,
         minHeight: config.height - config.padding,
         flex: isDesktop ? 0 : 1,
-        minWidth: isDesktop ? 80 : 'auto',
+        minWidth: isDesktop ? 80 : undefined,
       },
-    ],
+    ]),
     headerShown: false,
     tabBarHideOnKeyboard: true,
   };
@@ -356,13 +326,24 @@ const styles = StyleSheet.create({
     boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.15)',
   },
   tabBarDesktop: {
+    backgroundColor: Colors.card,
     borderRadius: 16,
-    marginHorizontal: 24,
-    marginBottom: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderTopWidth: 1,
     borderWidth: 1,
     borderColor: Colors.border,
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+    maxWidth: 960,
+    width: '100%',
+    alignSelf: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.1)',
+    alignItems: 'center',
   },
   tabBarTablet: {
     borderRadius: 12,
@@ -380,11 +361,15 @@ const styles = StyleSheet.create({
   tabBarItem: {
     alignItems: 'center',
     justifyContent: 'center',
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
   },
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    transition: Platform.OS === 'web' ? 'all 0.2s ease' : undefined,
+    flexDirection: 'row',
+    gap: 4,
   },
   tabIconContainerActive: {
     backgroundColor: Colors.primary[100],

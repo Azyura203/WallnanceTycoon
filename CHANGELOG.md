@@ -1,6 +1,6 @@
 # 📦 Wallnance Tycoon – Changelog
 
-## [v1.7.1] - 2025-01-XX
+## [v1.7.1] - 2025-06-28
 
 ### 🎯 Enhanced Learn & Earn Rewards System
 
@@ -80,8 +80,7 @@ This update transforms the learning system into a **real Binance-style Learn & E
 This update makes learning feel like a real investment in your trading education, with tangible rewards that enhance your gameplay experience!
 
 ---
-
-## [v1.7.0] - 2025-01-XX
+## [v1.7.0] - 2025-06-28
 
 ### 🎉 Major Release - Complete Gamification System
 
@@ -170,7 +169,6 @@ This is the biggest update yet! Wallnance Tycoon now features a complete gamific
 - Enhanced scrolling performance
 
 ---
-
 ## [v1.6.0] - 2025-06-24
 
 ### 🎉 Added
