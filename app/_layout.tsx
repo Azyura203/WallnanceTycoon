@@ -9,7 +9,8 @@ import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold } from '@expo-goo
 import { View, ActivityIndicator, StyleSheet, Text, Platform } from 'react-native';
 import Colors from '@/src/constants/Colors';
 import * as SplashScreen from 'expo-splash-screen';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
