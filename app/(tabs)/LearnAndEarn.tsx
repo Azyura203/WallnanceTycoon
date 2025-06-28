@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, useWindowDimensions } from 'react-native';
-import { BookOpen, Trophy, Target, Clock, CircleCheck as CheckCircle, Star, Gift } from 'lucide-react-native';
+import { BookOpen, Trophy, Target, Clock, CircleCheck as CheckCircle, Star, Gift, Zap, TrendingUp } from 'lucide-react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import { useLearningSystem } from '@/src/hooks/useLearningSystem';
@@ -24,10 +24,11 @@ export default function LearnAndEarnScreen() {
     completeQuiz,
     getQuestsByCategory,
     getCompletedQuests,
+    getEstimatedRewards,
   } = useLearningSystem();
   
   const { checkAchievement } = useAchievements();
-  const { rewards, checkDailyBonus, getRewardMultiplier } = useRewardsSystem();
+  const { rewards, checkDailyBonus, getRewardMultiplier, getTradingPowerValue } = useRewardsSystem();
   
   const [selectedTab, setSelectedTab] = useState<'quests' | 'challenges' | 'progress'>('quests');
   const [selectedQuest, setSelectedQuest] = useState<LearningQuest | null>(null);
@@ -67,107 +68,148 @@ export default function LearnAndEarnScreen() {
       if (result) {
         setTimeout(() => {
           setLessonCompleteResult(null);
-        }, 3000);
+        }, 4000);
       }
     } catch (error) {
       console.error('Error completing lesson:', error);
     }
   };
 
-  const QuestCard = ({ quest }: { quest: LearningQuest }) => (
-    <View style={[styles.questCard, isSmallScreen && styles.questCardSmall]}>
-      <View style={styles.questHeader}>
-        <View style={styles.questTitleRow}>
-          <Text style={[styles.questTitle, isSmallScreen && styles.questTitleSmall]}>
-            {quest.title}
-          </Text>
-          <View style={[
-            styles.categoryBadge,
-            { backgroundColor: getCategoryColor(quest.category) },
-            isSmallScreen && styles.categoryBadgeSmall
-          ]}>
-            <Text style={[styles.categoryText, isSmallScreen && styles.categoryTextSmall]}>
-              {quest.category.toUpperCase()}
+  const QuestCard = ({ quest }: { quest: LearningQuest }) => {
+    const estimatedRewards = getEstimatedRewards(quest.id);
+    const multiplier = getRewardMultiplier();
+    
+    return (
+      <View style={[styles.questCard, isSmallScreen && styles.questCardSmall]}>
+        <View style={styles.questHeader}>
+          <View style={styles.questTitleRow}>
+            <Text style={[styles.questTitle, isSmallScreen && styles.questTitleSmall]}>
+              {quest.title}
             </Text>
-          </View>
-        </View>
-        {quest.completed && (
-          <View style={[styles.completedBadge, isSmallScreen && styles.completedBadgeSmall]}>
-            <CheckCircle size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
-          </View>
-        )}
-      </View>
-      
-      <Text style={[styles.questDescription, isSmallScreen && styles.questDescriptionSmall]}>
-        {quest.description}
-      </Text>
-      
-      {/* Progress Bar */}
-      <View style={[styles.progressContainer, isSmallScreen && styles.progressContainerSmall]}>
-        <View style={[styles.progressBar, isSmallScreen && styles.progressBarSmall]}>
-          <View 
-            style={[
-              styles.progressFill,
-              { width: `${quest.progress}%` }
-            ]} 
-          />
-        </View>
-        <Text style={[styles.progressText, isSmallScreen && styles.progressTextSmall]}>
-          {quest.progress}%
-        </Text>
-      </View>
-      
-      {/* Lessons */}
-      <View style={[styles.lessonsContainer, isSmallScreen && styles.lessonsContainerSmall]}>
-        {quest.lessons.map((lesson, index) => (
-          <TouchableOpacity
-            key={lesson.id}
-            style={[
-              styles.lessonItem,
-              lesson.completed && styles.lessonItemCompleted,
-              isSmallScreen && styles.lessonItemSmall
-            ]}
-            onPress={() => handleLessonPress(quest, lesson)}
-          >
-            <View style={styles.lessonInfo}>
-              <Text style={[
-                styles.lessonTitle,
-                lesson.completed && styles.lessonTitleCompleted,
-                isSmallScreen && styles.lessonTitleSmall
-              ]}>
-                {index + 1}. {lesson.title}
+            <View style={[
+              styles.categoryBadge,
+              { backgroundColor: getCategoryColor(quest.category) },
+              isSmallScreen && styles.categoryBadgeSmall
+            ]}>
+              <Text style={[styles.categoryText, isSmallScreen && styles.categoryTextSmall]}>
+                {quest.category.toUpperCase()}
               </Text>
-              <View style={styles.lessonMeta}>
-                <Clock size={isSmallScreen ? 12 : 14} color={Colors.neutral[500]} />
-                <Text style={[styles.lessonTime, isSmallScreen && styles.lessonTimeSmall]}>
-                  {lesson.estimatedTime} min • {Math.floor(lesson.estimatedTime * 10 * getRewardMultiplier())} pts
-                </Text>
-              </View>
             </View>
-            {lesson.completed && (
+          </View>
+          {quest.completed && (
+            <View style={[styles.completedBadge, isSmallScreen && styles.completedBadgeSmall]}>
               <CheckCircle size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
-      
-      {/* Rewards */}
-      <View style={[styles.rewardsContainer, isSmallScreen && styles.rewardsContainerSmall]}>
-        <Text style={[styles.rewardsTitle, isSmallScreen && styles.rewardsTitleSmall]}>
-          Quest Completion Rewards:
+            </View>
+          )}
+        </View>
+        
+        <Text style={[styles.questDescription, isSmallScreen && styles.questDescriptionSmall]}>
+          {quest.description}
         </Text>
-        <Text style={[styles.rewardsText, isSmallScreen && styles.rewardsTextSmall]}>
-          {Math.floor(quest.rewards.points * getRewardMultiplier())} points • ${quest.rewards.coins.toLocaleString()} coins
-          {quest.rewards.achievement && ` • ${quest.rewards.achievement} achievement`}
-        </Text>
-        {getRewardMultiplier() > 1 && (
-          <Text style={[styles.bonusText, isSmallScreen && styles.bonusTextSmall]}>
-            🔥 {getRewardMultiplier()}x streak bonus active!
+        
+        {/* Progress Bar */}
+        <View style={[styles.progressContainer, isSmallScreen && styles.progressContainerSmall]}>
+          <View style={[styles.progressBar, isSmallScreen && styles.progressBarSmall]}>
+            <View 
+              style={[
+                styles.progressFill,
+                { width: `${quest.progress}%` }
+              ]} 
+            />
+          </View>
+          <Text style={[styles.progressText, isSmallScreen && styles.progressTextSmall]}>
+            {quest.progress}%
           </Text>
-        )}
+        </View>
+        
+        {/* Lessons */}
+        <View style={[styles.lessonsContainer, isSmallScreen && styles.lessonsContainerSmall]}>
+          {quest.lessons.map((lesson, index) => {
+            const lessonRewards = getEstimatedRewards(quest.id, lesson.id);
+            
+            return (
+              <TouchableOpacity
+                key={lesson.id}
+                style={[
+                  styles.lessonItem,
+                  lesson.completed && styles.lessonItemCompleted,
+                  isSmallScreen && styles.lessonItemSmall
+                ]}
+                onPress={() => handleLessonPress(quest, lesson)}
+              >
+                <View style={styles.lessonInfo}>
+                  <Text style={[
+                    styles.lessonTitle,
+                    lesson.completed && styles.lessonTitleCompleted,
+                    isSmallScreen && styles.lessonTitleSmall
+                  ]}>
+                    {index + 1}. {lesson.title}
+                  </Text>
+                  <View style={styles.lessonMeta}>
+                    <Clock size={isSmallScreen ? 12 : 14} color={Colors.neutral[500]} />
+                    <Text style={[styles.lessonTime, isSmallScreen && styles.lessonTimeSmall]}>
+                      {lesson.estimatedTime} min
+                    </Text>
+                    <View style={[styles.rewardPreview, isSmallScreen && styles.rewardPreviewSmall]}>
+                      <Star size={isSmallScreen ? 10 : 12} color={Colors.warning[500]} />
+                      <Text style={[styles.rewardPreviewText, isSmallScreen && styles.rewardPreviewTextSmall]}>
+                        {lessonRewards.points} pts
+                      </Text>
+                      {multiplier > 1 && (
+                        <View style={[styles.multiplierBadge, isSmallScreen && styles.multiplierBadgeSmall]}>
+                          <Text style={[styles.multiplierText, isSmallScreen && styles.multiplierTextSmall]}>
+                            {multiplier}x
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </View>
+                {lesson.completed && (
+                  <CheckCircle size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        
+        {/* Enhanced Rewards Display */}
+        <View style={[styles.rewardsContainer, isSmallScreen && styles.rewardsContainerSmall]}>
+          <Text style={[styles.rewardsTitle, isSmallScreen && styles.rewardsTitleSmall]}>
+            Quest Completion Rewards:
+          </Text>
+          <View style={[styles.rewardsGrid, isSmallScreen && styles.rewardsGridSmall]}>
+            <View style={styles.rewardItem}>
+              <Text style={[styles.rewardIcon, isSmallScreen && styles.rewardIconSmall]}>⭐</Text>
+              <Text style={[styles.rewardValue, isSmallScreen && styles.rewardValueSmall]}>
+                {Math.floor(estimatedRewards.points)}
+              </Text>
+              <Text style={[styles.rewardLabel, isSmallScreen && styles.rewardLabelSmall]}>Points</Text>
+            </View>
+            <View style={styles.rewardItem}>
+              <Text style={[styles.rewardIcon, isSmallScreen && styles.rewardIconSmall]}>💰</Text>
+              <Text style={[styles.rewardValue, isSmallScreen && styles.rewardValueSmall]}>
+                {estimatedRewards.coins.toLocaleString()}
+              </Text>
+              <Text style={[styles.rewardLabel, isSmallScreen && styles.rewardLabelSmall]}>Coins</Text>
+            </View>
+            <View style={styles.rewardItem}>
+              <Text style={[styles.rewardIcon, isSmallScreen && styles.rewardIconSmall]}>🪙</Text>
+              <Text style={[styles.rewardValue, isSmallScreen && styles.rewardValueSmall]}>
+                {estimatedRewards.wlc}
+              </Text>
+              <Text style={[styles.rewardLabel, isSmallScreen && styles.rewardLabelSmall]}>WLC</Text>
+            </View>
+          </View>
+          {multiplier > 1 && (
+            <Text style={[styles.bonusText, isSmallScreen && styles.bonusTextSmall]}>
+              🔥 {multiplier}x streak bonus active!
+            </Text>
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const getCategoryColor = (category: LearningQuest['category']) => {
     switch (category) {
@@ -218,19 +260,46 @@ export default function LearnAndEarnScreen() {
         </Text>
       </View>
       
-      {/* Reward */}
+      {/* Enhanced Reward Display */}
       <View style={[styles.challengeReward, isSmallScreen && styles.challengeRewardSmall]}>
-        <Text style={[styles.rewardText, isSmallScreen && styles.rewardTextSmall]}>
-          Reward: {Math.floor(challenge.reward.points * getRewardMultiplier())} points, ${challenge.reward.coins.toLocaleString()}
-          {challenge.reward.multiplier && ` (${challenge.reward.multiplier}x bonus)`}
-        </Text>
+        <View style={styles.challengeRewardGrid}>
+          <View style={styles.challengeRewardItem}>
+            <Text style={[styles.challengeRewardValue, isSmallScreen && styles.challengeRewardValueSmall]}>
+              {challenge.reward.points}
+            </Text>
+            <Text style={[styles.challengeRewardLabel, isSmallScreen && styles.challengeRewardLabelSmall]}>
+              Points
+            </Text>
+          </View>
+          <View style={styles.challengeRewardItem}>
+            <Text style={[styles.challengeRewardValue, isSmallScreen && styles.challengeRewardValueSmall]}>
+              ${challenge.reward.coins.toLocaleString()}
+            </Text>
+            <Text style={[styles.challengeRewardLabel, isSmallScreen && styles.challengeRewardLabelSmall]}>
+              Coins
+            </Text>
+          </View>
+          {challenge.reward.multiplier && (
+            <View style={styles.challengeRewardItem}>
+              <Text style={[styles.challengeRewardValue, styles.multiplierValue, isSmallScreen && styles.challengeRewardValueSmall]}>
+                {challenge.reward.multiplier}x
+              </Text>
+              <Text style={[styles.challengeRewardLabel, isSmallScreen && styles.challengeRewardLabelSmall]}>
+                Multiplier
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
 
   const hasUnclaimedRewards = rewards.unclaimedRewards.points > 0 || 
                              rewards.unclaimedRewards.coins > 0 || 
-                             rewards.unclaimedRewards.wlc > 0;
+                             rewards.unclaimedRewards.wlc > 0 ||
+                             rewards.unclaimedRewards.tradingPower > 0;
+
+  const tradingPowerValue = getTradingPowerValue();
 
   return (
     <View style={styles.container}>
@@ -244,6 +313,11 @@ export default function LearnAndEarnScreen() {
             {lessonCompleteResult.streakBonus && (
               <Text style={[styles.bonusText, isSmallScreen && styles.bonusTextSmall]}>
                 🔥 Streak bonus applied!
+              </Text>
+            )}
+            {lessonCompleteResult.bonusType === 'first_time' && (
+              <Text style={[styles.bonusText, isSmallScreen && styles.bonusTextSmall]}>
+                🌟 First lesson bonus!
               </Text>
             )}
           </View>
@@ -276,10 +350,10 @@ export default function LearnAndEarnScreen() {
           </View>
           
           <Text style={[styles.subtitle, isSmallScreen && styles.subtitleSmall]}>
-            Master trading skills and earn real rewards
+            Master trading skills and earn real rewards that unlock premium features
           </Text>
           
-          {/* Stats */}
+          {/* Enhanced Stats */}
           <View style={[styles.statsContainer, isSmallScreen && styles.statsContainerSmall]}>
             <View style={[styles.statItem, isSmallScreen && styles.statItemSmall]}>
               <BookOpen size={isSmallScreen ? 16 : 20} color={Colors.primary[500]} />
@@ -309,15 +383,25 @@ export default function LearnAndEarnScreen() {
               </Text>
             </View>
             <View style={[styles.statItem, isSmallScreen && styles.statItemSmall]}>
-              <Gift size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
+              <Zap size={isSmallScreen ? 16 : 20} color={Colors.success[500]} />
               <Text style={[styles.statValue, isSmallScreen && styles.statValueSmall]}>
-                {rewards.totalWLC}
+                {tradingPowerValue}
               </Text>
               <Text style={[styles.statLabel, isSmallScreen && styles.statLabelSmall]}>
-                WLC
+                Trading Power
               </Text>
             </View>
           </View>
+
+          {/* Multiplier Display */}
+          {getRewardMultiplier() > 1 && (
+            <View style={[styles.multiplierDisplay, isSmallScreen && styles.multiplierDisplaySmall]}>
+              <TrendingUp size={isSmallScreen ? 16 : 20} color={Colors.warning[600]} />
+              <Text style={[styles.multiplierDisplayText, isSmallScreen && styles.multiplierDisplayTextSmall]}>
+                🔥 {getRewardMultiplier()}x Streak Bonus Active! All rewards multiplied!
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Tab Navigation */}
@@ -613,9 +697,11 @@ const styles = StyleSheet.create({
     borderRadius: Layout.borderRadius.lg,
     padding: Layout.spacing.lg,
     ...Layout.shadows.small,
+    marginBottom: Layout.spacing.md,
   },
   statsContainerSmall: {
     padding: Layout.spacing.md,
+    marginBottom: Layout.spacing.sm,
   },
   statItem: {
     alignItems: 'center',
@@ -639,6 +725,29 @@ const styles = StyleSheet.create({
   },
   statLabelSmall: {
     fontSize: 10,
+  },
+  multiplierDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Layout.spacing.sm,
+    backgroundColor: Colors.warning[100],
+    borderRadius: Layout.borderRadius.md,
+    padding: Layout.spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.warning[500],
+  },
+  multiplierDisplaySmall: {
+    padding: Layout.spacing.sm,
+    gap: Layout.spacing.xs,
+  },
+  multiplierDisplayText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: Colors.warning[700],
+    flex: 1,
+  },
+  multiplierDisplayTextSmall: {
+    fontSize: 12,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -832,7 +941,7 @@ const styles = StyleSheet.create({
   lessonMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   lessonTime: {
     fontFamily: 'Nunito-Regular',
@@ -841,6 +950,46 @@ const styles = StyleSheet.create({
   },
   lessonTimeSmall: {
     fontSize: 10,
+  },
+  rewardPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.warning[100],
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  rewardPreviewSmall: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    gap: 2,
+  },
+  rewardPreviewText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    color: Colors.warning[700],
+  },
+  rewardPreviewTextSmall: {
+    fontSize: 8,
+  },
+  multiplierBadge: {
+    backgroundColor: Colors.error[500],
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  multiplierBadgeSmall: {
+    paddingHorizontal: 2,
+    paddingVertical: 0.5,
+  },
+  multiplierText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 8,
+    color: Colors.card,
+  },
+  multiplierTextSmall: {
+    fontSize: 6,
   },
   rewardsContainer: {
     backgroundColor: Colors.primary[50],
@@ -854,18 +1003,45 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Bold',
     fontSize: 12,
     color: Colors.primary[700],
-    marginBottom: 2,
+    marginBottom: Layout.spacing.sm,
   },
   rewardsTitleSmall: {
     fontSize: 10,
+    marginBottom: Layout.spacing.xs,
   },
-  rewardsText: {
-    fontFamily: 'Nunito-SemiBold',
+  rewardsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: Layout.spacing.xs,
+  },
+  rewardsGridSmall: {
+    marginBottom: Layout.spacing.xs / 2,
+  },
+  rewardItem: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  rewardIcon: {
+    fontSize: 16,
+  },
+  rewardIconSmall: {
+    fontSize: 14,
+  },
+  rewardValue: {
+    fontFamily: 'Nunito-Bold',
     fontSize: 12,
+    color: Colors.primary[700],
+  },
+  rewardValueSmall: {
+    fontSize: 10,
+  },
+  rewardLabel: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 8,
     color: Colors.primary[600],
   },
-  rewardsTextSmall: {
-    fontSize: 10,
+  rewardLabelSmall: {
+    fontSize: 6,
   },
   challengeCard: {
     backgroundColor: Colors.card,
@@ -924,13 +1100,33 @@ const styles = StyleSheet.create({
   challengeRewardSmall: {
     padding: Layout.spacing.xs,
   },
-  rewardText: {
-    fontFamily: 'Nunito-SemiBold',
+  challengeRewardGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  challengeRewardItem: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  challengeRewardValue: {
+    fontFamily: 'Nunito-Bold',
     fontSize: 12,
     color: Colors.primary[700],
   },
-  rewardTextSmall: {
+  challengeRewardValueSmall: {
     fontSize: 10,
+  },
+  challengeRewardLabel: {
+    
+    fontFamily: 'Nunito-Regular',
+    fontSize: 8,
+    color: Colors.primary[600],
+  },
+  challengeRewardLabelSmall: {
+    fontSize: 6,
+  },
+  multiplierValue: {
+    color: Colors.error[600],
   },
   progressSection: {
     gap: Layout.spacing.lg,

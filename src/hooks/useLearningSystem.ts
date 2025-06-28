@@ -57,8 +57,8 @@ const SAMPLE_QUESTS: LearningQuest[] = [
       },
     ],
     rewards: {
-      points: 300,
-      coins: 15000,
+      points: 450, // Increased base rewards
+      coins: 25000,
       achievement: 'crypto_student',
     },
     completed: false,
@@ -86,6 +86,14 @@ const SAMPLE_QUESTS: LearningQuest[] = [
         estimatedTime: 8,
         completed: false,
       },
+      {
+        id: 'risk_management_basics',
+        title: 'Risk Management Fundamentals',
+        content: 'Risk management is the cornerstone of successful trading. Learn about position sizing, diversification, and the 1% rule. Never risk more than you can afford to lose, and always have an exit strategy before entering any trade.',
+        type: 'simulation',
+        estimatedTime: 15,
+        completed: false,
+      },
     ],
     quiz: [
       {
@@ -96,10 +104,18 @@ const SAMPLE_QUESTS: LearningQuest[] = [
         explanation: 'Stop-loss orders are designed to limit potential losses by automatically selling when the price drops to a specified level.',
         difficulty: 'medium',
       },
+      {
+        id: 'q2',
+        question: 'What percentage of your portfolio should you risk per trade?',
+        options: ['1-2%', '10-15%', '25-30%', '50%+'],
+        correctAnswer: 0,
+        explanation: 'Professional traders typically risk only 1-2% of their portfolio per trade to preserve capital.',
+        difficulty: 'medium',
+      },
     ],
     rewards: {
-      points: 500,
-      coins: 25000,
+      points: 750, // Higher rewards for intermediate
+      coins: 40000,
       achievement: 'trading_student',
     },
     completed: false,
@@ -127,6 +143,14 @@ const SAMPLE_QUESTS: LearningQuest[] = [
         estimatedTime: 15,
         completed: false,
       },
+      {
+        id: 'portfolio_theory',
+        title: 'Modern Portfolio Theory',
+        content: 'Learn about asset allocation, correlation, and how to build a balanced portfolio. Understand the efficient frontier and how to optimize returns while minimizing risk through proper diversification.',
+        type: 'text',
+        estimatedTime: 18,
+        completed: false,
+      },
     ],
     quiz: [
       {
@@ -137,10 +161,18 @@ const SAMPLE_QUESTS: LearningQuest[] = [
         explanation: 'Professional traders typically risk only 1-2% of their capital per trade to preserve their trading account.',
         difficulty: 'hard',
       },
+      {
+        id: 'q2',
+        question: 'What is the main benefit of portfolio diversification?',
+        options: ['Higher returns', 'Risk reduction', 'Faster trading', 'Lower fees'],
+        correctAnswer: 1,
+        explanation: 'Diversification primarily helps reduce overall portfolio risk by spreading investments across different assets.',
+        difficulty: 'hard',
+      },
     ],
     rewards: {
-      points: 800,
-      coins: 50000,
+      points: 1200, // Premium rewards for advanced
+      coins: 75000,
       achievement: 'trading_master',
     },
     completed: false,
@@ -158,51 +190,63 @@ const generateDailyChallenges = (): DailyChallenge[] => {
       type: 'trade_volume' as const,
       target: 5,
       progress: 0,
-      reward: { points: 150, coins: 8000 },
+      reward: { points: 200, coins: 12000 }, // Increased rewards
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       completed: false,
     },
     {
       id: 'profit_hunter',
       title: 'Profit Hunter',
-      description: 'Make $15K profit today',
+      description: 'Make $20K profit today',
       emoji: '💰',
       type: 'profit_target' as const,
-      target: 15000,
+      target: 20000,
       progress: 0,
-      reward: { points: 300, coins: 20000, multiplier: 1.5 },
+      reward: { points: 400, coins: 30000, multiplier: 1.5 },
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       completed: false,
     },
     {
       id: 'knowledge_seeker',
       title: 'Knowledge Seeker',
-      description: 'Complete 2 lessons today',
+      description: 'Complete 3 lessons today',
       emoji: '📚',
       type: 'lesson_complete' as const,
-      target: 2,
+      target: 3,
       progress: 0,
-      reward: { points: 200, coins: 12000 },
+      reward: { points: 300, coins: 18000 },
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       completed: false,
     },
     {
       id: 'quiz_master',
       title: 'Quiz Master',
-      description: 'Score 90%+ on any quiz',
+      description: 'Score 95%+ on any quiz',
       emoji: '🧠',
       type: 'quiz_score' as const,
-      target: 90,
+      target: 95,
       progress: 0,
-      reward: { points: 250, coins: 15000 },
+      reward: { points: 350, coins: 22000 },
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      completed: false,
+    },
+    {
+      id: 'streak_warrior',
+      title: 'Streak Warrior',
+      description: 'Maintain your learning streak',
+      emoji: '🔥',
+      type: 'lesson_complete' as const,
+      target: 1,
+      progress: 0,
+      reward: { points: 150, coins: 10000, multiplier: 2.0 },
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       completed: false,
     },
   ];
   
-  // Randomly select 2-3 challenges for the day
+  // Randomly select 3-4 challenges for the day
   const shuffled = challenges.sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, Math.floor(Math.random() * 2) + 2);
+  return shuffled.slice(0, Math.floor(Math.random() * 2) + 3);
 };
 
 export function useLearningSystem() {
@@ -269,12 +313,17 @@ export function useLearningSystem() {
     const lesson = quest.lessons.find(l => l.id === lessonId);
     if (!lesson || lesson.completed) return null;
 
-    // Calculate base points based on lesson difficulty and time
-    const basePoints = Math.floor(lesson.estimatedTime * 10); // 10 points per minute
-    const difficultyMultiplier = quest.category === 'beginner' ? 1 : quest.category === 'intermediate' ? 1.5 : 2;
+    // Enhanced point calculation with better rewards
+    const basePoints = Math.floor(lesson.estimatedTime * 15); // Increased from 10 to 15
+    const difficultyMultiplier = quest.category === 'beginner' ? 1.2 : quest.category === 'intermediate' ? 1.8 : 2.5;
     const rewardMultiplier = getRewardMultiplier();
     
     const finalPoints = Math.floor(basePoints * difficultyMultiplier * rewardMultiplier);
+
+    // Determine bonus type
+    let bonusType: 'first_time' | 'streak' | undefined;
+    if (totalLessonsCompleted === 0) bonusType = 'first_time';
+    else if (rewardMultiplier > 1) bonusType = 'streak';
 
     // Add reward transaction
     await addReward(
@@ -282,7 +331,8 @@ export function useLearningSystem() {
       finalPoints,
       `Completed "${lesson.title}"`,
       `Quest: ${quest.title}`,
-      rewardMultiplier
+      rewardMultiplier,
+      bonusType
     );
 
     // Update streak
@@ -338,6 +388,7 @@ export function useLearningSystem() {
       quest: updatedQuests.find(q => q.id === questId),
       pointsEarned: finalPoints,
       streakBonus: rewardMultiplier > 1,
+      bonusType,
     };
   };
 
@@ -348,11 +399,17 @@ export function useLearningSystem() {
     const passed = score >= 70; // 70% passing grade
     
     if (passed) {
-      // Calculate quiz reward points
+      // Enhanced quiz reward calculation
       const basePoints = quest.rewards.points;
-      const scoreBonus = score >= 90 ? 1.5 : score >= 80 ? 1.2 : 1;
+      const scoreBonus = score >= 95 ? 2.0 : score >= 90 ? 1.8 : score >= 80 ? 1.4 : 1.0;
+      const difficultyMultiplier = quest.category === 'beginner' ? 1.0 : quest.category === 'intermediate' ? 1.5 : 2.0;
       const rewardMultiplier = getRewardMultiplier();
-      const finalPoints = Math.floor(basePoints * scoreBonus * rewardMultiplier);
+      const finalPoints = Math.floor(basePoints * scoreBonus * difficultyMultiplier * rewardMultiplier);
+
+      // Determine bonus type
+      let bonusType: 'perfect_score' | 'streak' | undefined;
+      if (score >= 95) bonusType = 'perfect_score';
+      else if (rewardMultiplier > 1) bonusType = 'streak';
 
       // Add reward transaction
       await addReward(
@@ -360,7 +417,8 @@ export function useLearningSystem() {
         finalPoints,
         `Passed "${quest.title}" quiz with ${score}%`,
         `Quest: ${quest.title}`,
-        rewardMultiplier
+        rewardMultiplier,
+        bonusType
       );
 
       const updatedQuests = quests.map(q => 
@@ -382,6 +440,7 @@ export function useLearningSystem() {
         rewards: quest.rewards,
         pointsEarned: finalPoints,
         scoreBonus: scoreBonus > 1,
+        bonusType,
       };
     }
     
@@ -397,12 +456,14 @@ export function useLearningSystem() {
         
         // Award points if challenge just completed
         if (!wasCompleted && isNowCompleted) {
+          const bonusType = challenge.reward.multiplier && challenge.reward.multiplier > 1 ? 'daily_double' : undefined;
           addReward(
             'challenge_complete',
             challenge.reward.points,
             `Completed daily challenge: ${challenge.title}`,
             'Daily Challenges',
-            challenge.reward.multiplier || 1
+            challenge.reward.multiplier || 1,
+            bonusType
           );
         }
         
@@ -445,6 +506,39 @@ export function useLearningSystem() {
            getCompletedChallenges().reduce((total, challenge) => total + challenge.reward.points, 0);
   };
 
+  const getEstimatedRewards = (questId: string, lessonId?: string) => {
+    const quest = quests.find(q => q.id === questId);
+    if (!quest) return { points: 0, coins: 0, wlc: 0 };
+
+    if (lessonId) {
+      const lesson = quest.lessons.find(l => l.id === lessonId);
+      if (!lesson) return { points: 0, coins: 0, wlc: 0 };
+
+      const basePoints = Math.floor(lesson.estimatedTime * 15);
+      const difficultyMultiplier = quest.category === 'beginner' ? 1.2 : quest.category === 'intermediate' ? 1.8 : 2.5;
+      const rewardMultiplier = getRewardMultiplier();
+      const finalPoints = Math.floor(basePoints * difficultyMultiplier * rewardMultiplier);
+
+      return {
+        points: finalPoints,
+        coins: finalPoints * 15, // POINT_TO_COIN_RATE
+        wlc: Math.floor(finalPoints / 75), // POINT_TO_WLC_RATE
+      };
+    }
+
+    // Quest completion rewards
+    const basePoints = quest.rewards.points;
+    const difficultyMultiplier = quest.category === 'beginner' ? 1.0 : quest.category === 'intermediate' ? 1.5 : 2.0;
+    const rewardMultiplier = getRewardMultiplier();
+    const finalPoints = Math.floor(basePoints * difficultyMultiplier * rewardMultiplier);
+
+    return {
+      points: finalPoints,
+      coins: quest.rewards.coins,
+      wlc: Math.floor(finalPoints / 75),
+    };
+  };
+
   return {
     quests,
     dailyChallenges,
@@ -458,5 +552,6 @@ export function useLearningSystem() {
     getAvailableQuests,
     getCompletedChallenges,
     getTotalPointsEarned,
+    getEstimatedRewards,
   };
 }

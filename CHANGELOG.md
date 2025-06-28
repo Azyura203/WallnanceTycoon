@@ -9,11 +9,11 @@ This update transforms the learning system into a **real Binance-style Learn & E
 #### ✨ New Reward Features
 
 **💰 Comprehensive Rewards System**
-- Real point-to-currency conversion (1 point = 10 coins, 100 points = 1 WLC)
+- Real point-to-currency conversion (1 point = 15 coins, 75 points = 1 WLC)
 - Automatic reward calculations based on lesson difficulty and time investment
-- Streak multiplier system: 3+ days (1.5x), 7+ days (2x bonus)
+- Streak multiplier system: 3+ days (1.5x), 7+ days (2.0x), 14+ days (2.5x), 30+ days (3.0x)
 - Daily bonus system with increasing rewards for consecutive logins
-- Quiz score bonuses: 80%+ score gets 1.2x, 90%+ gets 1.5x multiplier
+- Quiz score bonuses: 80%+ score gets 1.4x, 90%+ gets 1.8x, 95%+ gets 2.0x multiplier
 
 **🎮 Interactive Rewards Center**
 - Beautiful rewards modal with claim functionality
@@ -22,11 +22,18 @@ This update transforms the learning system into a **real Binance-style Learn & E
 - Player level progression based on total points earned
 - Lifetime statistics and achievement integration
 
-**📊 Smart Point System**
-- Base calculation: 10 points per minute of lesson content
-- Difficulty multipliers: Beginner (1x), Intermediate (1.5x), Advanced (2x)
-- Challenge completion rewards: 150-300 points based on difficulty
-- Automatic background processing and persistent storage
+**⚡ Trading Power System**
+- New premium currency that unlocks special features
+- Earned through learning and converted from WLC tokens
+- Can be spent on reduced trading fees, premium market data, and exclusive features
+- Visible trading power balance in rewards center
+
+**🔓 Premium Features**
+- Unlock advanced charts with 5 WLC
+- Access exclusive content with 10 WLC
+- Enable portfolio analytics with 25 WLC
+- Get trading signals with 50 WLC
+- Receive priority support with 100 WLC
 
 #### 🎨 UI/UX Improvements
 
