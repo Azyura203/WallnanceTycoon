@@ -12,16 +12,19 @@
     "noEmit": true,
     "isolatedModules": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
-    "types": ["expo", "victory-native"]
+    "types": [
+      "expo",
+      "victory-native"
+    ]
   },
   "include": [
     "types",
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules",
