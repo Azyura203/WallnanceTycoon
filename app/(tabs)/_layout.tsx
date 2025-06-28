@@ -3,7 +3,7 @@ console.log("Loading: app/(tabs)/_layout.tsx");
 import { Tabs } from 'expo-router';
 import { StyleSheet, View, Text, useWindowDimensions } from 'react-native';
 import Colors from '@/src/constants/Colors';
-import { Chrome as Home, TrendingUp, Users, Trophy, Settings } from 'lucide-react-native';
+import { Chrome as Home, TrendingUp, Users, Trophy, Settings, User, Calendar } from 'lucide-react-native';
 import { useTimeTracking } from '@/src/hooks/system/useTimeTracking';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -136,6 +136,36 @@ export default function TabLayout() {
                 isSmallScreen && styles.tabIconContainerSmall
               ]}>
                 <Trophy color={color} size={isSmallScreen ? 20 : 24} />
+              </View>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="events"
+          options={{
+            title: 'Events',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[
+                styles.tabIconContainer,
+                focused && styles.tabIconContainerActive,
+                isSmallScreen && styles.tabIconContainerSmall
+              ]}>
+                <Calendar color={color} size={isSmallScreen ? 20 : 24} />
+              </View>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[
+                styles.tabIconContainer,
+                focused && styles.tabIconContainerActive,
+                isSmallScreen && styles.tabIconContainerSmall
+              ]}>
+                <User color={color} size={isSmallScreen ? 20 : 24} />
               </View>
             ),
           }}
