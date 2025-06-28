@@ -28,4 +28,9 @@ config.resolver.assetExts = [
   'svg'
 ];
 
+// Add resolver for better module resolution
+config.resolver.alias = {
+  '@': __dirname,
+};
+
 module.exports = config;

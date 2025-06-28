@@ -16,26 +16,21 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wallnance.tycoon"
+      "bundleIdentifier": "com.wallnance.tycoon",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/icon.png",
         "backgroundColor": "#f5f3ff"
       },
-      "package": "com.wallnance.tycoon"
+      "package": "com.wallnance.tycoon",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./src/assets/images/favicon.png",
       "bundler": "metro",
-      "output": "static",
-      "build": {
-        "babel": {
-          "include": [
-            "@expo/vector-icons"
-          ]
-        }
-      }
+      "output": "static"
     },
     "plugins": [
       "expo-router",
@@ -47,20 +42,18 @@
       ]
     ],
     "scheme": "wallnance-tycoon",
-    "doctor": {
-      "reactNativeDirectoryCheck": {
-        "exclude": [
-          "react-native-chart-kit",
-          "react-native-snap-carousel",
-          "@lucide/lab",
-          "dotenv-expand",
-          "react-sparklines"
-        ]
-      }
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/08f0d236-e514-4699-9a6b-5b3b2196b68b"
     },
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "08f0d236-e514-4699-9a6b-5b3b2196b68b"
       }
     }
   }
