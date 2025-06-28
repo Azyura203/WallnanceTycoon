@@ -47,8 +47,23 @@ export default function DetailedChart({
   const chartWidth = Math.min(width - (isSmallScreen ? 32 : 48), 380);
   
   const [chartType, setChartType] = useState<'line' | 'candle' | 'volume'>('line');
-  const [showMA, setShowMA] = useState(false); // Moving Average
+  const [showMA, setShowMA] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
+
+  // Enhanced color scheme for better visibility
+  const getChartColors = () => {
+    const isPositive = change >= 0;
+    return {
+      primary: isPositive ? '#10B981' : '#EF4444', // Stronger green/red
+      secondary: isPositive ? '#059669' : '#DC2626', // Darker variants
+      background: '#FFFFFF',
+      grid: '#E5E7EB',
+      text: '#374151',
+      accent: '#3B82F6',
+    };
+  };
+
+  const colors = getChartColors();
 
   // Generate time labels based on range
   const generateLabels = (range: string, dataLength: number) => {
@@ -58,19 +73,19 @@ export default function DetailedChart({
     switch (range) {
       case '1H':
         for (let i = dataLength - 1; i >= 0; i--) {
-          const time = new Date(now.getTime() - i * 5 * 60000); // 5 min intervals
+          const time = new Date(now.getTime() - i * 5 * 60000);
           labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
         }
         break;
       case '1D':
         for (let i = dataLength - 1; i >= 0; i--) {
-          const time = new Date(now.getTime() - i * 60 * 60000); // 1 hour intervals
+          const time = new Date(now.getTime() - i * 60 * 60000);
           labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit' }));
         }
         break;
       case '7D':
         for (let i = dataLength - 1; i >= 0; i--) {
-          const time = new Date(now.getTime() - i * 24 * 60 * 60000); // 1 day intervals
+          const time = new Date(now.getTime() - i * 24 * 60 * 60000);
           labels.push(time.toLocaleDateString('en-US', { weekday: 'short' }));
         }
         break;
@@ -82,13 +97,13 @@ export default function DetailedChart({
         break;
       case '3M':
         for (let i = dataLength - 1; i >= 0; i--) {
-          const time = new Date(now.getTime() - i * 7 * 24 * 60 * 60000); // 1 week intervals
+          const time = new Date(now.getTime() - i * 7 * 24 * 60 * 60000);
           labels.push(`W${Math.ceil((now.getTime() - time.getTime()) / (7 * 24 * 60 * 60000))}`);
         }
         break;
       case '1Y':
         for (let i = dataLength - 1; i >= 0; i--) {
-          const time = new Date(now.getTime() - i * 30 * 24 * 60 * 60000); // 1 month intervals
+          const time = new Date(now.getTime() - i * 30 * 24 * 60 * 60000);
           labels.push(time.toLocaleDateString('en-US', { month: 'short' }));
         }
         break;
@@ -132,13 +147,13 @@ export default function DetailedChart({
     datasets: [
       {
         data,
-        color: (opacity = 1) => change >= 0 ? `rgba(34, 197, 94, ${opacity})` : `rgba(239, 68, 68, ${opacity})`,
-        strokeWidth: 2,
+        color: (opacity = 1) => `${colors.primary}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+        strokeWidth: 3, // Increased stroke width for better visibility
       },
       ...(showMA ? [{
         data: movingAverage,
-        color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-        strokeWidth: 1,
+        color: (opacity = 1) => `${colors.accent}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+        strokeWidth: 2,
       }] : []),
     ],
   };
@@ -153,6 +168,36 @@ export default function DetailedChart({
 
   const timeRanges: Array<'1H' | '1D' | '7D' | '1M' | '3M' | '1Y'> = ['1H', '1D', '7D', '1M', '3M', '1Y'];
 
+  // Enhanced chart config with better visibility
+  const getChartConfig = () => ({
+    backgroundColor: colors.background,
+    backgroundGradientFrom: colors.background,
+    backgroundGradientTo: colors.background,
+    decimalPlaces: 2,
+    color: (opacity = 1) => `${colors.primary}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+    labelColor: (opacity = 1) => `${colors.text}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+    style: {
+      borderRadius: 16,
+    },
+    propsForDots: {
+      r: "4",
+      strokeWidth: "3",
+      stroke: colors.secondary,
+      fill: colors.primary,
+    },
+    propsForBackgroundLines: {
+      strokeDasharray: "3,3",
+      stroke: colors.grid,
+      strokeWidth: 1,
+    },
+    fillShadowGradient: colors.primary,
+    fillShadowGradientFrom: colors.primary,
+    fillShadowGradientTo: colors.primary,
+    fillShadowGradientOpacity: 0.2,
+    strokeWidth: 3,
+    useShadowColorFromDataset: false,
+  });
+
   return (
     <View style={[styles.container, isSmallScreen && styles.containerSmall]}>
       {/* Header with price info */}
@@ -164,7 +209,7 @@ export default function DetailedChart({
           </Text>
           <Text style={[
             styles.change,
-            { color: change >= 0 ? Colors.success[600] : Colors.error[600] },
+            { color: colors.primary },
             isSmallScreen && styles.changeSmall
           ]}>
             {change >= 0 ? '+' : ''}{change.toFixed(2)}% ({timeRange})
@@ -289,74 +334,45 @@ export default function DetailedChart({
         )}
       </View>
 
-      {/* Main Chart */}
+      {/* Main Chart with enhanced visibility */}
       <View style={[styles.chartContainer, isSmallScreen && styles.chartContainerSmall]}>
-        {chartType === 'line' ? (
-          <LineChart
-            data={chartData}
-            width={chartWidth}
-            height={isSmallScreen ? 180 : 220}
-            chartConfig={{
-              backgroundColor: Colors.card,
-              backgroundGradientFrom: Colors.card,
-              backgroundGradientTo: Colors.card,
-              decimalPlaces: 2,
-              color: (opacity = 1) => change >= 0 ? `rgba(34, 197, 94, ${opacity})` : `rgba(239, 68, 68, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: "3",
-                strokeWidth: "1",
-                stroke: change >= 0 ? Colors.success[500] : Colors.error[500],
-              },
-              propsForBackgroundLines: {
-                strokeDasharray: "5,5",
-                stroke: Colors.neutral[200],
-                strokeWidth: 1,
-              },
-              fillShadowGradient: change >= 0 ? Colors.success[500] : Colors.error[500],
-              fillShadowGradientOpacity: 0.1,
-            }}
-            bezier
-            style={styles.chart}
-            withDots={data.length <= 20}
-            withShadow={true}
-            withInnerLines={true}
-            withOuterLines={false}
-            withVerticalLabels={true}
-            withHorizontalLabels={true}
-            fromZero={false}
-          />
-        ) : (
-          <BarChart
-            data={volumeChartData}
-            width={chartWidth}
-            height={isSmallScreen ? 180 : 220}
-            chartConfig={{
-              backgroundColor: Colors.card,
-              backgroundGradientFrom: Colors.card,
-              backgroundGradientTo: Colors.card,
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(156, 163, 175, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForBackgroundLines: {
-                strokeDasharray: "5,5",
-                stroke: Colors.neutral[200],
-                strokeWidth: 1,
-              },
-            }}
-            style={styles.chart}
-            withInnerLines={true}
-            withHorizontalLabels={true}
-            fromZero={true}
-            showValuesOnTopOfBars={false}
-          />
-        )}
+        <View style={styles.chartWrapper}>
+          {chartType === 'line' ? (
+            <LineChart
+              data={chartData}
+              width={chartWidth}
+              height={isSmallScreen ? 200 : 240}
+              chartConfig={getChartConfig()}
+              bezier
+              style={styles.chart}
+              withDots={data.length <= 20}
+              withShadow={true}
+              withInnerLines={true}
+              withOuterLines={false}
+              withVerticalLabels={true}
+              withHorizontalLabels={true}
+              fromZero={false}
+              segments={4}
+            />
+          ) : (
+            <BarChart
+              data={volumeChartData}
+              width={chartWidth}
+              height={isSmallScreen ? 200 : 240}
+              chartConfig={{
+                ...getChartConfig(),
+                color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
+                fillShadowGradient: '#6366F1',
+                fillShadowGradientOpacity: 0.3,
+              }}
+              style={styles.chart}
+              withInnerLines={true}
+              withHorizontalLabels={true}
+              fromZero={true}
+              showValuesOnTopOfBars={false}
+            />
+          )}
+        </View>
       </View>
 
       {/* Selected point info */}
@@ -385,7 +401,7 @@ export default function DetailedChart({
               <Text style={[styles.indicatorLabel, isSmallScreen && styles.indicatorLabelSmall]}>MACD</Text>
               <Text style={[
                 styles.indicatorValue,
-                { color: Math.random() > 0.5 ? Colors.success[600] : Colors.error[600] },
+                { color: Math.random() > 0.5 ? colors.primary : colors.secondary },
                 isSmallScreen && styles.indicatorValueSmall
               ]}>
                 {(Math.random() * 2 - 1).toFixed(3)}
@@ -490,10 +506,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   metricValuePositive: {
-    color: Colors.success[600],
+    color: '#10B981',
   },
   metricValueNegative: {
-    color: Colors.error[600],
+    color: '#EF4444',
   },
   timeRangeContainer: {
     flexDirection: 'row',
@@ -570,6 +586,16 @@ const styles = StyleSheet.create({
   },
   chartContainerSmall: {
     marginBottom: Layout.spacing.md,
+  },
+  chartWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: Layout.borderRadius.md,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   chart: {
     borderRadius: Layout.borderRadius.md,

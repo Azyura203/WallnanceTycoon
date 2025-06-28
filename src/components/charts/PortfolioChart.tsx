@@ -34,6 +34,20 @@ export default function PortfolioChart({
   const [chartType, setChartType] = useState<'pie' | 'line' | 'performance'>('pie');
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
+  // Enhanced color palette for better visibility
+  const vibrantColors = [
+    '#10B981', // Emerald
+    '#3B82F6', // Blue
+    '#F59E0B', // Amber
+    '#EF4444', // Red
+    '#8B5CF6', // Violet
+    '#06B6D4', // Cyan
+    '#84CC16', // Lime
+    '#F97316', // Orange
+    '#EC4899', // Pink
+    '#6366F1', // Indigo
+  ];
+
   // Generate historical portfolio data
   const generatePortfolioHistory = () => {
     const points = timeRange === '1D' ? 24 : timeRange === '7D' ? 7 : timeRange === '1M' ? 30 : timeRange === '3M' ? 90 : 365;
@@ -41,7 +55,7 @@ export default function PortfolioChart({
     let currentValue = totalValue;
     
     for (let i = points - 1; i >= 0; i--) {
-      const volatility = 0.02; // 2% daily volatility
+      const volatility = 0.02;
       const change = (Math.random() - 0.5) * volatility;
       currentValue = currentValue * (1 + change);
       data.push(parseFloat(currentValue.toFixed(2)));
@@ -62,11 +76,11 @@ export default function PortfolioChart({
       let time: Date;
       switch (timeRange) {
         case '1D':
-          time = new Date(now.getTime() - i * 60 * 60000); // 1 hour intervals
+          time = new Date(now.getTime() - i * 60 * 60000);
           labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit' }));
           break;
         case '7D':
-          time = new Date(now.getTime() - i * 24 * 60 * 60000); // 1 day intervals
+          time = new Date(now.getTime() - i * 24 * 60 * 60000);
           labels.push(time.toLocaleDateString('en-US', { weekday: 'short' }));
           break;
         case '1M':
@@ -74,11 +88,11 @@ export default function PortfolioChart({
           labels.push(time.getDate().toString());
           break;
         case '3M':
-          time = new Date(now.getTime() - i * 7 * 24 * 60 * 60000); // 1 week intervals
+          time = new Date(now.getTime() - i * 7 * 24 * 60 * 60000);
           labels.push(`W${Math.ceil(i / 7)}`);
           break;
         case '1Y':
-          time = new Date(now.getTime() - i * 30 * 24 * 60 * 60000); // 1 month intervals
+          time = new Date(now.getTime() - i * 30 * 24 * 60 * 60000);
           labels.push(time.toLocaleDateString('en-US', { month: 'short' }));
           break;
         default:
@@ -88,22 +102,44 @@ export default function PortfolioChart({
     return labels;
   };
 
-  // Prepare pie chart data
+  // Enhanced chart configuration
+  const getChartConfig = () => ({
+    backgroundColor: '#FFFFFF',
+    backgroundGradientFrom: '#FFFFFF',
+    backgroundGradientTo: '#FFFFFF',
+    decimalPlaces: 0,
+    color: (opacity = 1) => totalChange >= 0 
+      ? `rgba(16, 185, 129, ${opacity})` 
+      : `rgba(239, 68, 68, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(55, 65, 81, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+    propsForDots: {
+      r: "5",
+      strokeWidth: "3",
+      stroke: totalChange >= 0 ? '#059669' : '#DC2626',
+      fill: totalChange >= 0 ? '#10B981' : '#EF4444',
+    },
+    propsForBackgroundLines: {
+      strokeDasharray: "3,3",
+      stroke: '#E5E7EB',
+      strokeWidth: 1,
+    },
+    fillShadowGradient: totalChange >= 0 ? '#10B981' : '#EF4444',
+    fillShadowGradientOpacity: 0.2,
+    strokeWidth: 3,
+  });
+
+  // Prepare pie chart data with vibrant colors
   const pieData = assets
     .filter(asset => asset.value > 0)
     .map((asset, index) => ({
       name: asset.name,
       population: asset.value,
-      color: [
-        Colors.primary[500],
-        Colors.success[500],
-        Colors.warning[500],
-        Colors.error[500],
-        Colors.secondary[500],
-        Colors.accent[500],
-      ][index % 6],
-      legendFontColor: Colors.neutral[600],
-      legendFontSize: isSmallScreen ? 10 : 12,
+      color: vibrantColors[index % vibrantColors.length],
+      legendFontColor: Colors.neutral[700],
+      legendFontSize: isSmallScreen ? 11 : 13,
     }));
 
   // Prepare line chart data
@@ -116,9 +152,9 @@ export default function PortfolioChart({
         ? portfolioHistory.filter((_, i) => i % Math.ceil(portfolioHistory.length / 8) === 0)
         : portfolioHistory,
       color: (opacity = 1) => totalChange >= 0 
-        ? `rgba(34, 197, 94, ${opacity})` 
+        ? `rgba(16, 185, 129, ${opacity})` 
         : `rgba(239, 68, 68, ${opacity})`,
-      strokeWidth: 2,
+      strokeWidth: 3,
     }],
   };
 
@@ -128,6 +164,7 @@ export default function PortfolioChart({
     datasets: [{
       data: assets.slice(0, 5).map(asset => asset.change),
       color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+      strokeWidth: 3,
     }],
   };
 
@@ -146,7 +183,7 @@ export default function PortfolioChart({
           </Text>
           <Text style={[
             styles.totalChange,
-            { color: totalChange >= 0 ? Colors.success[600] : Colors.error[600] },
+            { color: totalChange >= 0 ? '#10B981' : '#EF4444' },
             isSmallScreen && styles.totalChangeSmall
           ]}>
             {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% ({timeRange})
@@ -250,84 +287,58 @@ export default function PortfolioChart({
         </View>
       )}
 
-      {/* Chart Display */}
+      {/* Enhanced Chart Display */}
       <View style={[styles.chartContainer, isSmallScreen && styles.chartContainerSmall]}>
-        {chartType === 'pie' && pieData.length > 0 ? (
-          <PieChart
-            data={pieData}
-            width={chartWidth}
-            height={isSmallScreen ? 180 : 220}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="15"
-            center={[0, 0]}
-            absolute
-            chartConfig={{
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            }}
-          />
-        ) : chartType === 'line' ? (
-          <LineChart
-            data={lineChartData}
-            width={chartWidth}
-            height={isSmallScreen ? 180 : 220}
-            chartConfig={{
-              backgroundColor: Colors.card,
-              backgroundGradientFrom: Colors.card,
-              backgroundGradientTo: Colors.card,
-              decimalPlaces: 0,
-              color: (opacity = 1) => totalChange >= 0 
-                ? `rgba(34, 197, 94, ${opacity})` 
-                : `rgba(239, 68, 68, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: "4",
-                strokeWidth: "2",
-                stroke: totalChange >= 0 ? Colors.success[500] : Colors.error[500],
-              },
-              fillShadowGradient: totalChange >= 0 ? Colors.success[500] : Colors.error[500],
-              fillShadowGradientOpacity: 0.1,
-            }}
-            bezier
-            style={styles.chart}
-            withDots={portfolioHistory.length <= 20}
-            withShadow={true}
-            withInnerLines={true}
-            withOuterLines={false}
-            fromZero={false}
-          />
-        ) : (
-          // Performance bar chart using LineChart as bars
-          <LineChart
-            data={performanceData}
-            width={chartWidth}
-            height={isSmallScreen ? 180 : 220}
-            chartConfig={{
-              backgroundColor: Colors.card,
-              backgroundGradientFrom: Colors.card,
-              backgroundGradientTo: Colors.card,
-              decimalPlaces: 1,
-              color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: "6",
-                strokeWidth: "2",
-                stroke: Colors.secondary[500],
-              },
-            }}
-            style={styles.chart}
-            withDots={true}
-            withInnerLines={true}
-            withOuterLines={false}
-            fromZero={true}
-          />
-        )}
+        <View style={styles.chartWrapper}>
+          {chartType === 'pie' && pieData.length > 0 ? (
+            <PieChart
+              data={pieData}
+              width={chartWidth}
+              height={isSmallScreen ? 200 : 240}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="15"
+              center={[0, 0]}
+              absolute
+              chartConfig={{
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              }}
+            />
+          ) : chartType === 'line' ? (
+            <LineChart
+              data={lineChartData}
+              width={chartWidth}
+              height={isSmallScreen ? 200 : 240}
+              chartConfig={getChartConfig()}
+              bezier
+              style={styles.chart}
+              withDots={portfolioHistory.length <= 20}
+              withShadow={true}
+              withInnerLines={true}
+              withOuterLines={false}
+              fromZero={false}
+              segments={4}
+            />
+          ) : (
+            <LineChart
+              data={performanceData}
+              width={chartWidth}
+              height={isSmallScreen ? 200 : 240}
+              chartConfig={{
+                ...getChartConfig(),
+                color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+                fillShadowGradient: '#3B82F6',
+                fillShadowGradientOpacity: 0.2,
+              }}
+              style={styles.chart}
+              withDots={true}
+              withInnerLines={true}
+              withOuterLines={false}
+              fromZero={true}
+              segments={4}
+            />
+          )}
+        </View>
       </View>
 
       {/* Asset Breakdown */}
@@ -345,7 +356,7 @@ export default function PortfolioChart({
               <View style={styles.assetInfo}>
                 <View style={[
                   styles.assetColorDot,
-                  { backgroundColor: pieData[index]?.color || Colors.neutral[400] }
+                  { backgroundColor: vibrantColors[index % vibrantColors.length] }
                 ]} />
                 <Text style={[styles.assetName, isSmallScreen && styles.assetNameSmall]}>
                   {asset.emoji} {asset.name}
@@ -493,7 +504,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   statValuePositive: {
-    color: Colors.success[600],
+    color: '#10B981',
   },
   chartTypeContainer: {
     flexDirection: 'row',
@@ -571,6 +582,16 @@ const styles = StyleSheet.create({
   chartContainerSmall: {
     marginBottom: Layout.spacing.md,
   },
+  chartWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: Layout.borderRadius.md,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   chart: {
     borderRadius: Layout.borderRadius.md,
   },
@@ -609,10 +630,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   assetColorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     marginRight: Layout.spacing.sm,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
   assetName: {
     fontFamily: 'Nunito-SemiBold',
@@ -690,9 +713,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   insightValuePositive: {
-    color: Colors.success[600],
+    color: '#10B981',
   },
   insightValueNegative: {
-    color: Colors.error[600],
+    color: '#EF4444',
   },
 });
