@@ -11,6 +11,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "paths": {
       "@/*": [
         "./*"
@@ -30,6 +32,7 @@
     "node_modules",
     "babel.config.js",
     "metro.config.js",
-    "jest.config.js"
+    "jest.config.js",
+    "dist"
   ]
 }

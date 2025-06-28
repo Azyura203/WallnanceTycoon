@@ -9,24 +9,33 @@
     "splash": {
       "image": "./src/assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#f5f3ff"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wallnance.tycoon"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#f5f3ff"
+      },
+      "package": "com.wallnance.tycoon"
     },
     "web": {
       "favicon": "./src/assets/images/favicon.png",
       "bundler": "metro",
-      "output": "static"
+      "output": "static",
+      "build": {
+        "babel": {
+          "include": [
+            "@expo/vector-icons"
+          ]
+        }
+      }
     },
     "plugins": [
       "expo-router",
@@ -47,6 +56,11 @@
           "dotenv-expand",
           "react-sparklines"
         ]
+      }
+    },
+    "extra": {
+      "router": {
+        "origin": false
       }
     }
   }

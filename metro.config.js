@@ -17,4 +17,15 @@ config.transformer = {
   },
 };
 
+// Ensure proper asset handling for web
+config.resolver.assetExts = [
+  ...config.resolver.assetExts,
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'svg'
+];
+
 module.exports = config;
