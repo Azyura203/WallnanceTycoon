@@ -251,7 +251,7 @@ export default function SettingsScreen() {
             <GameButton
               title="Save"
               onPress={() => {
-                if (editingField === 'profile') set Username(tempInputValue);
+                if (editingField === 'profile') setUsername(tempInputValue);
                 setEditingField(null);
               }}
               style={[styles.saveButton, isSmallScreen && styles.saveButtonSmall]}
