@@ -9,6 +9,7 @@ import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
 import { saveGameData } from '@/utils/saveGame';
 import { useMarketPrices } from '@/src/hooks/market/useMarketPrices';
 import { useCompanyShares } from '@/src/hooks/useCompanyShares';
+import DetailedChart from '@/src/components/charts/DetailedChart';
 
 interface Coin {
   id: string;
@@ -85,6 +86,9 @@ export default function MarketScreen() {
   const [showCoinFlip, setShowCoinFlip] = useState(false);
   const [showWLCModal, setShowWLCModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [showDetailedChart, setShowDetailedChart] = useState<string | null>(null);
+  const [chartTimeRange, setChartTimeRange] = useState<'1H' | '1D' | '7D' | '1M' | '3M' | '1Y'>('1D');
+  
   const { news, generateNews } = useMarketNews();
   const { balance, portfolio, buyCoin, sellCoin } = usePlayerFinances();
 
@@ -92,7 +96,22 @@ export default function MarketScreen() {
   const companyShares = useCompanyShares();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 400;
-  const isMediumScreen = width < 600;
+
+  // Generate price history for detailed chart
+  const generatePriceHistory = (currentPrice: number, range: '1H' | '1D' | '7D' | '1M' | '3M' | '1Y') => {
+    const points = range === '1H' ? 12 : range === '1D' ? 24 : range === '7D' ? 7 : range === '1M' ? 30 : range === '3M' ? 90 : 365;
+    const data = [];
+    let price = currentPrice;
+    
+    for (let i = points - 1; i >= 0; i--) {
+      const volatility = 0.02; // 2% volatility
+      const change = (Math.random() - 0.5) * volatility;
+      price = price * (1 + change);
+      data.push(parseFloat(price.toFixed(2)));
+    }
+    
+    return data.reverse();
+  };
 
   const handleCoinPress = (coin: Coin) => {
     setSelectedCoin(coin);
@@ -213,6 +232,15 @@ export default function MarketScreen() {
                 <Text style={styles.volumeTextMobile}>
                   Vol: ${(coin.price * 10000).toLocaleString()}
                 </Text>
+                <TouchableOpacity
+                  style={styles.chartButtonMobile}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setShowDetailedChart(coin.name);
+                  }}
+                >
+                  <Text style={styles.chartButtonText}>📊</Text>
+                </TouchableOpacity>
               </View>
             </>
           ) : (
@@ -249,6 +277,18 @@ export default function MarketScreen() {
                 <Text style={styles.volumeText}>
                   {(coin.price * 10000).toLocaleString()}
                 </Text>
+              </View>
+
+              <View style={styles.coinActionsSection}>
+                <TouchableOpacity
+                  style={styles.chartButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setShowDetailedChart(coin.name);
+                  }}
+                >
+                  <Text style={styles.chartButtonText}>📊</Text>
+                </TouchableOpacity>
               </View>
             </>
           )}
@@ -398,6 +438,7 @@ export default function MarketScreen() {
                 <Text style={styles.headerText}>Price</Text>
                 <Text style={styles.headerText}>24h</Text>
                 <Text style={styles.headerText}>Volume</Text>
+                <Text style={styles.headerText}>Chart</Text>
               </View>
             )}
             
@@ -452,6 +493,7 @@ export default function MarketScreen() {
                 <Text style={styles.headerText}>Price</Text>
                 <Text style={styles.headerText}>24h</Text>
                 <Text style={styles.headerText}>Volume</Text>
+                <Text style={styles.headerText}>Chart</Text>
               </View>
             )}
             
@@ -485,6 +527,54 @@ export default function MarketScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Detailed Chart Modal */}
+      <Modal
+        visible={!!showDetailedChart}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowDetailedChart(null)}
+      >
+        {showDetailedChart && (
+          <View style={styles.chartModalContainer}>
+            <View style={styles.chartModalHeader}>
+              <Text style={styles.chartModalTitle}>
+                {showDetailedChart} Analysis
+              </Text>
+              <TouchableOpacity
+                style={styles.chartModalCloseButton}
+                onPress={() => setShowDetailedChart(null)}
+              >
+                <Text style={styles.chartModalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.chartModalContent}>
+              {(() => {
+                const coin = [...marketPrices, ...companyShares].find(c => c.name === showDetailedChart);
+                if (!coin) return null;
+                
+                return (
+                  <DetailedChart
+                    data={generatePriceHistory(coin.price, chartTimeRange)}
+                    title={coin.name}
+                    timeRange={chartTimeRange}
+                    onTimeRangeChange={setChartTimeRange}
+                    currentPrice={coin.price}
+                    change={coin.change}
+                    volume={coin.total_volume || Math.floor(Math.random() * 1000000)}
+                    marketCap={Math.floor(coin.price * 1000000)}
+                    high24h={coin.high24h || coin.price * 1.05}
+                    low24h={coin.low24h || coin.price * 0.95}
+                    showVolume={true}
+                    showIndicators={true}
+                  />
+                );
+              })()}
+            </ScrollView>
+          </View>
+        )}
+      </Modal>
 
       {/* Trade Modal */}
       <Modal
@@ -557,11 +647,17 @@ export default function MarketScreen() {
                   </View>
                 </View>
 
-                <View style={[styles.modalChartPlaceholder, isSmallScreen && styles.modalChartPlaceholderSmall]}>
-                  <Text style={[styles.modalChartText, isSmallScreen && styles.modalChartTextSmall]}>
-                    [Chart coming soon]
+                <TouchableOpacity
+                  style={[styles.viewChartButton, isSmallScreen && styles.viewChartButtonSmall]}
+                  onPress={() => {
+                    setSelectedCoin(null);
+                    setShowDetailedChart(selectedCoin.name);
+                  }}
+                >
+                  <Text style={[styles.viewChartButtonText, isSmallScreen && styles.viewChartButtonTextSmall]}>
+                    📊 View Detailed Chart
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
               <View style={[styles.inputContainer, isSmallScreen && styles.inputContainerSmall]}>
@@ -958,12 +1054,23 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   coinFooterMobile: {
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   volumeTextMobile: {
     fontFamily: 'Nunito-Regular',
     fontSize: 11,
     color: Colors.neutral[600],
+  },
+  chartButtonMobile: {
+    backgroundColor: Colors.primary[100],
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  chartButtonText: {
+    fontSize: 12,
   },
   statusDot: {
     width: 8,
@@ -1012,13 +1119,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   coinVolumeSection: {
-    flex: 1,
+    flex:  1,
     alignItems: 'flex-end',
   },
   volumeText: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 13,
     color: Colors.neutral[600],
+  },
+  coinActionsSection: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  chartButton: {
+    backgroundColor: Colors.primary[100],
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   newsList: {
     gap: Layout.spacing.md,
@@ -1151,6 +1268,39 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  chartModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  chartModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Layout.spacing.lg,
+    backgroundColor: Colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+  },
+  chartModalTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 20,
+    color: Colors.primary[700],
+  },
+  chartModalCloseButton: {
+    backgroundColor: Colors.neutral[200],
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chartModalCloseText: {
+    fontSize: 18,
+    color: Colors.neutral[600],
+  },
+  chartModalContent: {
+    flex: 1,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1266,27 +1416,25 @@ const styles = StyleSheet.create({
   modalStatValueNegative: {
     color: Colors.error[600],
   },
-  modalChartPlaceholder: {
-    width: '100%',
-    height: 60,
-    marginTop: 8,
-    marginBottom: 2,
-    backgroundColor: Colors.neutral[100],
+  viewChartButton: {
+    backgroundColor: Colors.primary[500],
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
-  modalChartPlaceholderSmall: {
-    height: 40,
-    marginTop: 6,
+  viewChartButtonSmall: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
-  modalChartText: {
-    color: Colors.neutral[400],
-    fontSize: 13,
-    fontFamily: 'Nunito-Regular',
+  viewChartButtonText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
   },
-  modalChartTextSmall: {
-    fontSize: 11,
+  viewChartButtonTextSmall: {
+    fontSize: 12,
   },
   inputContainer: {
     gap: Layout.spacing.sm,

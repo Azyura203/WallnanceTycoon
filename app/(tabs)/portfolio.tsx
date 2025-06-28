@@ -9,26 +9,8 @@ import { useNavigation } from 'expo-router';
 import { saveGameData } from '@/utils/saveGame';
 import { useEffect, useState } from 'react';
 import { useCompanyShares } from '@/src/hooks/useCompanyShares';
-import { PieChart, LineChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
-
-const getChartData = (price: number, range: '1D' | '7D' | '1M') => {
-  const points = range === '1D' ? 10 : range === '7D' ? 20 : 30;
-  const step = range === '1D' ? 0.01 : range === '7D' ? 0.05 : 0.1;
-  const data = Array.from({ length: points }, (_, i) =>
-    parseFloat((price * (1 + i * step * (Math.random() > 0.5 ? 1 : -1))).toFixed(2))
-  );
-  return {
-    labels: Array.from({ length: points }, (_, i) => `${i + 1}`),
-    datasets: [
-      {
-        data,
-        color: () => price > 0 ? 'rgba(0, 200, 83, 1)' : 'rgba(229, 57, 53, 1)',
-        strokeWidth: 2,
-      },
-    ],
-  };
-};
+import DetailedChart from '@/src/components/charts/DetailedChart';
+import PortfolioChart from '@/src/components/charts/PortfolioChart';
 
 export default function PortfolioScreen() {
   const { balance, portfolio } = usePlayerFinances();
@@ -36,7 +18,6 @@ export default function PortfolioScreen() {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 400;
-  const isMediumScreen = width < 600;
 
   const shares = useCompanyShares();
   const enrichedPortfolio = Object.entries(portfolio).map(([name, entry]) => {
@@ -83,8 +64,9 @@ export default function PortfolioScreen() {
     saveData();
   }, [balance, portfolio]);
 
-  const [selectedRange, setSelectedRange] = useState<'1D' | '7D' | '1M'>('1D');
+  const [selectedRange, setSelectedRange] = useState<'1D' | '7D' | '1M' | '3M' | '1Y'>('1D');
   const [sortBy, setSortBy] = useState<'Name' | 'Gain/Loss' | 'Value'>('Name');
+  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
   const badgeAnim = useState(new Animated.Value(0))[0];
   useEffect(() => {
@@ -95,7 +77,37 @@ export default function PortfolioScreen() {
     }).start();
   }, []);
 
-  const chartWidth = Math.min(width - (isSmallScreen ? 32 : 48), 400);
+  const totalPortfolioValue = enrichedPortfolio.reduce((acc, cur) => acc + cur.totalValue, 0);
+  const totalPortfolioChange = enrichedPortfolio.length > 0 
+    ? enrichedPortfolio.reduce((acc, cur) => acc + cur.roi, 0) / enrichedPortfolio.length 
+    : 0;
+
+  // Prepare data for portfolio chart
+  const portfolioAssets = enrichedPortfolio.map(asset => ({
+    name: asset.name,
+    value: asset.totalValue,
+    quantity: asset.quantity,
+    change: asset.roi,
+    emoji: asset.emoji,
+  }));
+
+  // Generate price history for selected asset
+  const generateAssetHistory = (currentPrice: number, range: '1H' | '1D' | '7D' | '1M' | '3M' | '1Y') => {
+    const points = range === '1H' ? 12 : range === '1D' ? 24 : range === '7D' ? 7 : range === '1M' ? 30 : range === '3M' ? 90 : 365;
+    const data = [];
+    let price = currentPrice;
+    
+    for (let i = points - 1; i >= 0; i--) {
+      const volatility = 0.02; // 2% volatility
+      const change = (Math.random() - 0.5) * volatility;
+      price = price * (1 + change);
+      data.push(parseFloat(price.toFixed(2)));
+    }
+    
+    return data.reverse();
+  };
+
+  const [assetTimeRange, setAssetTimeRange] = useState<'1H' | '1D' | '7D' | '1M' | '3M' | '1Y'>('1D');
 
   return (
     <View style={styles.container}>
@@ -113,7 +125,7 @@ export default function PortfolioScreen() {
             📊 Total Portfolio Value:
           </Text>
           <Text style={[styles.portfolioValueAmount, isSmallScreen && styles.portfolioValueAmountSmall]}>
-            ${enrichedPortfolio.reduce((acc, cur) => acc + cur.totalValue, 0).toFixed(2)}
+            ${totalPortfolioValue.toFixed(2)}
           </Text>
           
           <View style={[styles.plSnapshotSection, isSmallScreen && styles.plSnapshotSectionSmall]}>
@@ -135,59 +147,37 @@ export default function PortfolioScreen() {
           </View>
         </View>
 
+        {/* Enhanced Portfolio Chart */}
         {enrichedPortfolio.length > 0 && (
-          <View style={[styles.pieChartSection, isSmallScreen && styles.pieChartSectionSmall]}>
-            <Text style={[styles.pieChartTitle, isSmallScreen && styles.pieChartTitleSmall]}>
-              🧁 Asset Distribution
-            </Text>
-            <PieChart
-              data={enrichedPortfolio.map((coin, index) => ({
-                name: coin.name,
-                population: parseFloat(coin.totalValue.toFixed(2)),
-                color: ['#4CAF50', '#F44336', '#2196F3', '#FF9800', '#9C27B0', '#00BCD4'][index % 6],
-                legendFontColor: '#555',
-                legendFontSize: isSmallScreen ? 10 : 12,
-              }))}
-              width={chartWidth}
-              height={isSmallScreen ? 140 : 160}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="10"
-              center={[0, 0]}
-              absolute
-              chartConfig={{
-                backgroundColor: '#ffffff',
-                backgroundGradientFrom: '#ffffff',
-                backgroundGradientTo: '#ffffff',
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                labelColor: () => '#333',
-              }}
-            />
-          </View>
+          <PortfolioChart
+            assets={portfolioAssets}
+            totalValue={totalPortfolioValue}
+            totalChange={totalPortfolioChange}
+            timeRange={selectedRange}
+            onTimeRangeChange={setSelectedRange}
+          />
         )}
 
-        <View style={[styles.rangeSelector, isSmallScreen && styles.rangeSelectorSmall]}>
-          {['1D', '7D', '1M'].map((range) => (
-            <TouchableOpacity
-              key={range}
-              onPress={() => setSelectedRange(range as '1D' | '7D' | '1M')}
-              style={[
-                styles.rangeButton,
-                selectedRange === range && styles.rangeButtonActive,
-                isSmallScreen && styles.rangeButtonSmall
-              ]}
-            >
-              <Text style={[
-                styles.rangeButtonText,
-                selectedRange === range && styles.rangeButtonTextActive,
-                isSmallScreen && styles.rangeButtonTextSmall
-              ]}>
-                {range}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Individual Asset Detailed Chart */}
+        {selectedAsset && enrichedPortfolio.find(asset => asset.name === selectedAsset) && (
+          <DetailedChart
+            data={generateAssetHistory(
+              enrichedPortfolio.find(asset => asset.name === selectedAsset)!.currentPrice,
+              assetTimeRange
+            )}
+            title={`${selectedAsset} Analysis`}
+            timeRange={assetTimeRange}
+            onTimeRangeChange={setAssetTimeRange}
+            currentPrice={enrichedPortfolio.find(asset => asset.name === selectedAsset)!.currentPrice}
+            change={enrichedPortfolio.find(asset => asset.name === selectedAsset)!.roi}
+            volume={Math.floor(Math.random() * 1000000)}
+            marketCap={Math.floor(Math.random() * 10000000)}
+            high24h={enrichedPortfolio.find(asset => asset.name === selectedAsset)!.currentPrice * 1.05}
+            low24h={enrichedPortfolio.find(asset => asset.name === selectedAsset)!.currentPrice * 0.95}
+            showVolume={true}
+            showIndicators={true}
+          />
+        )}
 
         <View style={styles.portfolioSection}>
           <View style={styles.sectionHeader}>
@@ -231,26 +221,34 @@ export default function PortfolioScreen() {
             })
             .map((coin) => (
             <View key={coin.id} style={[styles.assetCard, isSmallScreen && styles.assetCardSmall]}>
-              <View style={styles.assetHeader}>
+              <TouchableOpacity
+                style={styles.assetHeader}
+                onPress={() => setSelectedAsset(selectedAsset === coin.name ? null : coin.name)}
+              >
                 <View style={styles.assetHeaderContent}>
                   <Text style={[styles.assetName, isSmallScreen && styles.assetNameSmall]}>
                     {coin.emoji} {coin.name}
                   </Text>
-                  <Animated.Text style={[
-                    styles.assetBadge,
-                    {
-                      backgroundColor: coin.gainLoss >= 0 ? 'rgba(0, 200, 83, 0.1)' : 'rgba(229, 57, 53, 0.1)',
-                      color: coin.gainLoss >= 0 ? 'green' : 'red',
-                      opacity: badgeAnim,
-                      transform: [{ translateY: badgeAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
-                    },
-                    isSmallScreen && styles.assetBadgeSmall
-                  ]}>
-                    {coin.gainLoss >= 0 ? '+' : ''}
-                    {coin.totalValue !== 0 ? ((coin.gainLoss / coin.totalValue) * 100).toFixed(2) : '0.00'}%
-                  </Animated.Text>
+                  <View style={styles.assetHeaderRight}>
+                    <Animated.Text style={[
+                      styles.assetBadge,
+                      {
+                        backgroundColor: coin.gainLoss >= 0 ? 'rgba(0, 200, 83, 0.1)' : 'rgba(229, 57, 53, 0.1)',
+                        color: coin.gainLoss >= 0 ? 'green' : 'red',
+                        opacity: badgeAnim,
+                        transform: [{ translateY: badgeAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
+                      },
+                      isSmallScreen && styles.assetBadgeSmall
+                    ]}>
+                      {coin.gainLoss >= 0 ? '+' : ''}
+                      {coin.totalValue !== 0 ? ((coin.gainLoss / coin.totalValue) * 100).toFixed(2) : '0.00'}%
+                    </Animated.Text>
+                    <Text style={[styles.expandIcon, isSmallScreen && styles.expandIconSmall]}>
+                      {selectedAsset === coin.name ? '📊' : '📈'}
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              </TouchableOpacity>
               
               <View style={[styles.assetDetails, isSmallScreen && styles.assetDetailsSmall]}>
                 <Text style={[styles.holdingText, isSmallScreen && styles.holdingTextSmall]}>
@@ -278,44 +276,6 @@ export default function PortfolioScreen() {
                     Current Value: ${coin.totalValue.toFixed(2)}
                   </Text>
                 </View>
-                
-                <View style={[styles.chartContainer, isSmallScreen && styles.chartContainerSmall]}>
-                  <LineChart
-                    data={getChartData(coin.currentPrice, selectedRange)}
-                    width={Math.min(chartWidth - 32, 300)}
-                    height={isSmallScreen ? 80 : 120}
-                    withDots={false}
-                    withShadow={true}
-                    withInnerLines={true}
-                    withOuterLines={false}
-                    withVerticalLabels={false}
-                    withHorizontalLabels={true}
-                    chartConfig={{
-                      backgroundColor: '#ffffff',
-                      backgroundGradientFrom: '#ffffff',
-                      backgroundGradientTo: '#ffffff',
-                      decimalPlaces: 2,
-                      color: (opacity = 1) =>
-                        coin.gainLoss >= 0
-                          ? `rgba(0, 200, 83, ${opacity})`
-                          : `rgba(229, 57, 53, ${opacity})`,
-                      labelColor: () => '#999',
-                      strokeWidth: 2,
-                      propsForDots: {
-                        r: '0',
-                      },
-                      propsForBackgroundLines: {
-                        stroke: '#eee',
-                      },
-                      propsForLabels: {
-                        fontSize: isSmallScreen ? 8 : 10,
-                        fontFamily: 'Nunito-Regular',
-                      },
-                    }}
-                    bezier
-                    style={styles.chart}
-                  />
-                </View>
               </View>
               
               <View style={[styles.buttonContainer, isSmallScreen && styles.buttonContainerSmall]}>
@@ -341,6 +301,14 @@ export default function PortfolioScreen() {
                   style={[styles.sellButton, isSmallScreen && styles.actionButtonSmall]}
                   textStyle={[styles.buttonText, isSmallScreen && styles.buttonTextSmall]}
                 />
+                <TouchableOpacity
+                  style={[styles.analyzeButton, isSmallScreen && styles.analyzeButtonSmall]}
+                  onPress={() => setSelectedAsset(selectedAsset === coin.name ? null : coin.name)}
+                >
+                  <Text style={[styles.analyzeButtonText, isSmallScreen && styles.analyzeButtonTextSmall]}>
+                    📊 Analyze
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
           ))}
@@ -464,62 +432,6 @@ const styles = StyleSheet.create({
   plSnapshotItemSmall: {
     fontSize: 12,
   },
-  pieChartSection: {
-    padding: Layout.spacing.md,
-    marginBottom: Layout.spacing.lg,
-    backgroundColor: Colors.card,
-    borderRadius: Layout.borderRadius.md,
-    alignItems: 'center',
-    ...Layout.shadows.small,
-  },
-  pieChartSectionSmall: {
-    padding: Layout.spacing.sm,
-    marginBottom: Layout.spacing.md,
-  },
-  pieChartTitle: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 18,
-    color: Colors.primary[700],
-    marginBottom: 12,
-  },
-  pieChartTitleSmall: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  rangeSelector: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: Layout.spacing.lg,
-  },
-  rangeSelectorSmall: {
-    marginBottom: Layout.spacing.md,
-  },
-  rangeButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: Colors.neutral[300],
-    borderRadius: 6,
-    marginHorizontal: 4,
-  },
-  rangeButtonSmall: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    marginHorizontal: 2,
-  },
-  rangeButtonActive: {
-    backgroundColor: Colors.primary[500],
-  },
-  rangeButtonText: {
-    color: '#333',
-    fontFamily: 'Nunito-Bold',
-    fontSize: 14,
-  },
-  rangeButtonTextSmall: {
-    fontSize: 12,
-  },
-  rangeButtonTextActive: {
-    color: '#fff',
-  },
   portfolioSection: {
     marginBottom: Layout.spacing.xl,
   },
@@ -614,6 +526,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  assetHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Layout.spacing.sm,
+  },
   assetName: {
     fontFamily: 'Nunito-Bold',
     fontSize: 16,
@@ -633,6 +550,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     paddingHorizontal: 4,
     paddingVertical: 1,
+  },
+  expandIcon: {
+    fontSize: 16,
+  },
+  expandIconSmall: {
+    fontSize: 14,
   },
   assetDetails: {
     gap: Layout.spacing.sm,
@@ -676,17 +599,6 @@ const styles = StyleSheet.create({
   metricTextSmall: {
     fontSize: 11,
   },
-  chartContainer: {
-    marginVertical: 8,
-  },
-  chartContainerSmall: {
-    marginVertical: 4,
-  },
-  chart: {
-    borderRadius: 8,
-    marginTop: 4,
-    alignSelf: 'center',
-  },
   buttonContainer: {
     flexDirection: 'row',
     gap: Layout.spacing.md,
@@ -725,6 +637,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+  },
+  analyzeButton: {
+    backgroundColor: Colors.primary[500],
+    flex: 1,
+    borderRadius: 50,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  analyzeButtonSmall: {
+    paddingVertical: 8,
+    borderRadius: 25,
+  },
+  analyzeButtonText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: 'white',
+  },
+  analyzeButtonTextSmall: {
+    fontSize: 12,
   },
   actionButtonSmall: {
     paddingVertical: 8,
