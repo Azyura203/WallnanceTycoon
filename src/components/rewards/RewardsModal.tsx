@@ -5,6 +5,7 @@ import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
 import GameButton from '@/src/components/buttons/GameButton';
 import { useRewardsSystem } from '@/src/hooks/useRewardsSystem';
+import { usePlayerFinances } from '@/src/hooks/finance/usePlayerFinances';
 
 interface Props {
   visible: boolean;
@@ -27,6 +28,8 @@ export default function RewardsModal({ visible, onClose }: Props) {
     POINT_TO_WLC_RATE,
     WLC_TO_TRADING_POWER_RATE 
   } = useRewardsSystem();
+  
+  const { updateBalance } = usePlayerFinances();
   
   const [isClaiming, setIsClaiming] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -54,6 +57,12 @@ export default function RewardsModal({ visible, onClose }: Props) {
     setIsClaiming(true);
     try {
       const claimed = await claimRewards();
+      
+      // Update player balance with claimed coins
+      if (claimed.claimedCoins > 0) {
+        await updateBalance(claimed.claimedCoins);
+      }
+      
       setClaimedAmount(claimed);
       setShowSuccess(true);
       

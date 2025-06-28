@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { usePlayerFinances } from './finance/usePlayerFinances';
 
 const REWARDS_STORAGE_KEY = '@wallnance_rewards_system';
 const DAILY_BONUS_KEY = '@wallnance_daily_bonus';
@@ -79,8 +78,6 @@ export function useRewardsSystem() {
       totalStudyTime: 0,
     },
   });
-
-  const { updateBalance } = usePlayerFinances();
 
   useEffect(() => {
     loadRewards();
@@ -185,8 +182,18 @@ export function useRewardsSystem() {
   };
 
   const claimRewards = async () => {
-    if (rewards.unclaimedRewards.coins > 0) {
-      await updateBalance(rewards.unclaimedRewards.coins);
+    if (rewards.unclaimedRewards.points === 0 && 
+        rewards.unclaimedRewards.coins === 0 && 
+        rewards.unclaimedRewards.wlc === 0 &&
+        rewards.unclaimedRewards.tradingPower === 0) {
+      return {
+        points: 0,
+        coins: 0,
+        wlc: 0,
+        tradingPower: 0,
+        newFeatures: [],
+        claimedCoins: 0, // Add this for the component to use
+      };
     }
 
     const claimedRewards = { ...rewards.unclaimedRewards };
@@ -228,6 +235,7 @@ export function useRewardsSystem() {
     return {
       ...claimedRewards,
       newFeatures: getNewlyUnlockedFeatures(rewards.premiumFeatures, updatedPremiumFeatures),
+      claimedCoins: claimedRewards.coins, // Return the coins amount for the component to handle
     };
   };
 
