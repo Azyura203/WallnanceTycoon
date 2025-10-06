@@ -2,6 +2,7 @@ console.log("Loading: app/(tabs)/_layout.tsx");
 
 import { Tabs } from 'expo-router';
 import { StyleSheet, View, Text, useWindowDimensions, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/src/constants/Colors';
 import { Chrome as Home, TrendingUp, Users, Trophy, Settings, User, Calendar } from 'lucide-react-native';
 import { useTimeTracking } from '@/src/hooks/system/useTimeTracking';
@@ -105,9 +106,9 @@ export default function TabLayout() {
         paddingHorizontal: config.padding,
         paddingTop: config.padding / 2,
         paddingBottom: isWeb ? config.padding / 2 : Math.max(config.padding / 2, 6),
-        maxWidth: config.maxWidth,
-        alignSelf: 'stretch' as const,
-        // width: '100%', // Removed to fix type error
+        // When a maxWidth is provided, use it and center the bar on large screens.
+        width: config.maxWidth ? config.maxWidth : '100%',
+        alignSelf: config.maxWidth ? ('center' as const) : ('stretch' as const),
         borderTopWidth: isWeb ? 1 : 0.5,
         shadowOpacity: isWeb ? 0.15 : 0.1,
         elevation: isWeb ? 8 : 10,
@@ -130,8 +131,10 @@ export default function TabLayout() {
         paddingVertical: config.padding / 2,
         paddingHorizontal: isDesktop ? 12 : config.padding / 2,
         minHeight: config.height - config.padding,
-        flex: isDesktop ? 0 : 1,
-        minWidth: isDesktop ? 80 : undefined,
+        // Always let items flex so they distribute evenly across the bar
+        flex: 1,
+        // remove forced minWidth on desktop so items can center properly
+        minWidth: undefined,
       },
     ]),
     headerShown: false,
@@ -139,7 +142,7 @@ export default function TabLayout() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
       {/* Enhanced Stats Overlay - Responsive positioning */}
       <View style={[
         styles.playTimeOverlay,
@@ -303,22 +306,28 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   tabBar: {
+    // Standard, in-flow bottom tab bar
     backgroundColor: Colors.card,
     borderTopColor: Colors.border,
+    borderTopWidth: 1,
     justifyContent: 'space-around',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowRadius: 8,
-    position: Platform.OS === 'web' ? 'relative' : 'absolute',
-    bottom: 0,
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 6,
+    position: 'relative', // keep in normal layout flow
     left: 0,
     right: 0,
+    borderRadius: 0,
+    overflow: 'visible',
+    paddingBottom: Platform.OS === 'ios' ? 8 : 4,
   },
   tabBarWeb: {
     borderTopWidth: 1,
@@ -326,31 +335,24 @@ const styles = StyleSheet.create({
     boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.15)',
   },
   tabBarDesktop: {
+    // Desktop uses full-width horizontal layout like mobile
     backgroundColor: Colors.card,
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderTopWidth: 1,
-    borderWidth: 1,
     borderColor: Colors.border,
-    maxWidth: 960,
     width: '100%',
-    alignSelf: 'center',
-    justifyContent: 'space-between',
+    alignSelf: 'stretch',
+    justifyContent: 'space-around',
     flexDirection: 'row',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.1)',
     alignItems: 'center',
   },
   tabBarTablet: {
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginBottom: 12,
+    // Minor tweaks for tablet but keep standard bottom bar
+    borderRadius: 0,
+    marginHorizontal: 0,
+    marginBottom: 0,
     borderTopWidth: 1,
-    borderWidth: 1,
     borderColor: Colors.border,
   },
   tabBarLabel: {
@@ -361,15 +363,15 @@ const styles = StyleSheet.create({
   tabBarItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
+    flex: 1,
+    minWidth: 56,
   },
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 4,
+    // "gap" is not supported in RN; use padding and explicit spacing where needed
+    paddingHorizontal: 4,
   },
   tabIconContainerActive: {
     backgroundColor: Colors.primary[100],

@@ -1,5 +1,33 @@
 # 📦 Wallnance Tycoon – Changelog
 
+## [v1.7.2] - 2025-10-06
+
+### 🛠️ Last-minute UI Fixes (Tab Bar & Market)
+
+- Tab bar reverted to a standard, in-flow bottom bar (no floating rounded container).
+  - Uses SafeAreaView for bottom safe-area on mobile.
+  - Removed absolute positioning and extra inset padding on mobile.
+  - Desktop layout centered with max-width and full-width fallbacks so there is no left gap.
+  - Tab items now flex evenly (flex: 1) so icons/labels distribute across the bar on desktop.
+  - Removed unsupported "gap" usage and replaced with padding/margin for consistent spacing.
+
+- Market / Coin list layout fixes:
+  - Converted fixed column widths to responsive flex columns (name: flex 3, others: flex 1).
+  - coinCardWide now uses justifyContent: 'space-between' so columns spread evenly.
+  - Removed left‑anchored fixed-width behavior — coins and tokens center/distribute correctly on desktop, tablet, and mobile.
+
+- Misc:
+  - Tab icon container spacing and min sizes adjusted for desktop/tablet/mobile consistency.
+  - Minor shadow and border tweaks to ensure a clean, full-width appearance on all platforms.
+
+Notes:
+- Reload the app after applying changes. If SafeAreaView is used and you don't have react-native-safe-area-context installed, run:
+  - yarn add react-native-safe-area-context
+  - or npm i react-native-safe-area-context
+
+If anything still looks off on a specific desktop width or device, send the window width or a screenshot and I will refine.
+
+---
 ## [v1.7.1] - 2025-06-28
 
 ### 🎯 Enhanced Learn & Earn Rewards System
