@@ -1,0 +1,38 @@
+{
+  "extends": "./node_modules/expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "allowJs": true,
+    "jsx": "react-native",
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "types": [
+      "expo",
+      "victory-native"
+    ]
+  },
+  "include": [
+    "types",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js",
+    "dist"
+  ]
+}

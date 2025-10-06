@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "Wallnance Tycoon",
+    "slug": "wallnance-tycoon-game",
+    "version": "1.7.1",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./src/assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f5f3ff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wallnance.tycoon",
+      "buildNumber": "1"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/icon.png",
+        "backgroundColor": "#f5f3ff"
+      },
+      "package": "com.wallnance.tycoon",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./src/assets/images/favicon.png",
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-dev-client",
+        {
+          "addGeneratedScheme": false
+        }
+      ]
+    ],
+    "scheme": "wallnance-tycoon",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/08f0d236-e514-4699-9a6b-5b3b2196b68b"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "08f0d236-e514-4699-9a6b-5b3b2196b68b"
+      }
+    }
+  }
+}
