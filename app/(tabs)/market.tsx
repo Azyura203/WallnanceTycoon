@@ -969,40 +969,11 @@ const styles = StyleSheet.create({
   },
   // Enhanced column definitions with perfect centering
   nameColumn: {
-<<<<<<< HEAD
+
     flexDirection: 'row',
     alignItems: 'center',
     width: 180,
     paddingRight: 8,
-  },
-  symbolColumn: {
-    width: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  priceColumn: {
-    width: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  changeColumn: {
-    width: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  volumeColumn: {
-    width: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coinList: {
-    gap: 2,
-=======
-    flex: 3,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: 8,
-    minWidth: 160,
   },
   symbolColumn: {
     flex: 1,
@@ -1029,7 +1000,6 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   coinList: {
->>>>>>> 2d44614 (chore(release): v1.7.2 - last minute UI fixes(Tab Bar & market))
     backgroundColor: Colors.card,
     borderBottomLeftRadius: Layout.borderRadius.md,
     borderBottomRightRadius: Layout.borderRadius.md,
@@ -1049,10 +1019,9 @@ const styles = StyleSheet.create({
   coinCardWide: {
     flexDirection: 'row',
     alignItems: 'center',
-<<<<<<< HEAD
-=======
+
     justifyContent: 'space-between', // distribute columns evenly across the row
->>>>>>> 2d44614 (chore(release): v1.7.2 - last minute UI fixes(Tab Bar & market))
+
   },
   coinCardNarrow: {
     flexDirection: 'column',
