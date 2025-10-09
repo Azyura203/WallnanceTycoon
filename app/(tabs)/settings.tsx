@@ -1,48 +1,58 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useCompanyName } from '@/src/hooks/useCompanyName';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, useWindowDimensions, Switch, Alert } from 'react-native';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
-import { Settings as SettingsIcon, Volume2, Music, Bell, RefreshCw, Shield, FileText, BookOpen, X, TrendingUp, Users, Smile } from 'lucide-react-native';
+import { Volume2, Music, Bell, RefreshCw, Shield, FileText, BookOpen, X, Users, Vibrate, Moon, Globe, Save } from 'lucide-react-native';
 import GameButton from '@/src/components/buttons/GameButton';
 import { useRouter } from 'expo-router';
+import { useSettings } from '@/src/hooks/settings/useSettings';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 400;
-  
+
   const [showHowToPlay, setShowHowToPlay] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [musicEnabled, setMusicEnabled] = useState(true);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [competitorAI, setCompetitorAI] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const { companyName: username, setCompanyName: setUsername } = useCompanyName();
   const [editingField, setEditingField] = useState<'profile' | null>(null);
   const [tempInputValue, setTempInputValue] = useState('');
+  const { settings, updateSetting, resetSettings } = useSettings();
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      const sound = await AsyncStorage.getItem('soundEnabled');
-      const music = await AsyncStorage.getItem('musicEnabled');
-      const notifications = await AsyncStorage.getItem('notificationsEnabled');
-      const ai = await AsyncStorage.getItem('competitorAI');
-      if (sound !== null) setSoundEnabled(sound === 'true');
-      if (music !== null) setMusicEnabled(music === 'true');
-      if (notifications !== null) setNotificationsEnabled(notifications === 'true');
-      if (ai === 'Low' || ai === 'Medium' || ai === 'High') setCompetitorAI(ai);
-    };
-    loadSettings();
-  }, []);
-
-  const toggleSetting = async (key: string, value: boolean, setter: (v: boolean) => void) => {
-    setter(value);
-    await AsyncStorage.setItem(key, value.toString());
+  const handleResetProgress = () => {
+    Alert.alert(
+      'Reset Progress',
+      'Are you sure you want to reset all your game progress? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const keys = await AsyncStorage.getAllKeys();
+              const gameKeys = keys.filter(key =>
+                key.startsWith('game') ||
+                key.includes('portfolio') ||
+                key.includes('market') ||
+                key.includes('achievements') ||
+                key.includes('rewards') ||
+                key.includes('learning')
+              );
+              await AsyncStorage.multiRemove(gameKeys);
+              Alert.alert('Success', 'Game progress has been reset. Please restart the app.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset progress. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const persistSetting = async (key: string, value: string | boolean) => {
-    await AsyncStorage.setItem(key, value.toString());
+  const toggleSwitch = (key: keyof typeof settings, value: boolean) => {
+    updateSetting(key, value);
   };
 
   return (
@@ -54,16 +64,16 @@ export default function SettingsScreen() {
             Customize your experience
           </Text>
         </View>
-        
-        <TouchableOpacity 
-          style={[styles.howToPlayButton, isSmallScreen && styles.howToPlayButtonSmall]} 
+
+        <TouchableOpacity
+          style={[styles.howToPlayButton, isSmallScreen && styles.howToPlayButtonSmall]}
           onPress={() => setShowHowToPlay(true)}
         >
           <View style={styles.howToPlayContent}>
             <BookOpen size={isSmallScreen ? 20 : 24} color={Colors.primary[600]} />
             <View style={styles.howToPlayText}>
               <Text style={[styles.howToPlayTitle, isSmallScreen && styles.howToPlayTitleSmall]}>
-                📘 How to Play
+                How to Play
               </Text>
               <Text style={[styles.howToPlaySubtitle, isSmallScreen && styles.howToPlaySubtitleSmall]}>
                 Learn game mechanics and strategies
@@ -74,79 +84,159 @@ export default function SettingsScreen() {
 
         <View style={[styles.settingsSection, isSmallScreen && styles.settingsSectionSmall]}>
           <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>
-            Game Options
+            Audio Settings
           </Text>
 
-          <TouchableOpacity
-            style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}
-            onPress={() => toggleSetting('soundEnabled', !soundEnabled, setSoundEnabled)}
-          >
+          <View style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
             <View style={styles.settingLeft}>
               <Volume2 size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
               <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
                 Sound Effects
               </Text>
             </View>
-            <Text style={[styles.settingValue, isSmallScreen && styles.settingValueSmall]}>
-              {soundEnabled ? 'On' : 'Off'}
-            </Text>
-          </TouchableOpacity>
+            <Switch
+              value={settings.soundEnabled}
+              onValueChange={(value) => toggleSwitch('soundEnabled', value)}
+              trackColor={{ false: Colors.neutral[300], true: Colors.primary[400] }}
+              thumbColor={settings.soundEnabled ? Colors.primary[600] : Colors.neutral[100]}
+            />
+          </View>
 
-          <TouchableOpacity
-            style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}
-            onPress={() => toggleSetting('musicEnabled', !musicEnabled, setMusicEnabled)}
-          >
+          <View style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
             <View style={styles.settingLeft}>
               <Music size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
               <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
-                Music
+                Background Music
               </Text>
             </View>
-            <Text style={[styles.settingValue, isSmallScreen && styles.settingValueSmall]}>
-              {musicEnabled ? 'On' : 'Off'}
-            </Text>
-          </TouchableOpacity>
+            <Switch
+              value={settings.musicEnabled}
+              onValueChange={(value) => toggleSwitch('musicEnabled', value)}
+              trackColor={{ false: Colors.neutral[300], true: Colors.primary[400] }}
+              thumbColor={settings.musicEnabled ? Colors.primary[600] : Colors.neutral[100]}
+            />
+          </View>
+        </View>
 
-          <TouchableOpacity
-            style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}
-            onPress={() => toggleSetting('notificationsEnabled', !notificationsEnabled, setNotificationsEnabled)}
-          >
+        <View style={[styles.settingsSection, isSmallScreen && styles.settingsSectionSmall]}>
+          <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>
+            Notifications & Feedback
+          </Text>
+
+          <View style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
             <View style={styles.settingLeft}>
               <Bell size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
               <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
                 Notifications
               </Text>
             </View>
-            <Text style={[styles.settingValue, isSmallScreen && styles.settingValueSmall]}>
-              {notificationsEnabled ? 'On' : 'Off'}
-            </Text>
-          </TouchableOpacity>
+            <Switch
+              value={settings.notificationsEnabled}
+              onValueChange={(value) => toggleSwitch('notificationsEnabled', value)}
+              trackColor={{ false: Colors.neutral[300], true: Colors.primary[400] }}
+              thumbColor={settings.notificationsEnabled ? Colors.primary[600] : Colors.neutral[100]}
+            />
+          </View>
+
+          <View style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
+            <View style={styles.settingLeft}>
+              <Vibrate size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
+              <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
+                Haptic Feedback
+              </Text>
+            </View>
+            <Switch
+              value={settings.hapticFeedback}
+              onValueChange={(value) => toggleSwitch('hapticFeedback', value)}
+              trackColor={{ false: Colors.neutral[300], true: Colors.primary[400] }}
+              thumbColor={settings.hapticFeedback ? Colors.primary[600] : Colors.neutral[100]}
+            />
+          </View>
         </View>
 
         <View style={[styles.settingsSection, isSmallScreen && styles.settingsSectionSmall]}>
           <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>
             Gameplay Settings
           </Text>
+
           <TouchableOpacity
             style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}
             onPress={() => {
-              const next = competitorAI === 'Low' ? 'Medium' : competitorAI === 'Medium' ? 'High' : 'Low';
-              setCompetitorAI(next);
-              persistSetting('competitorAI', next);
+              const levels: Array<'Low' | 'Medium' | 'High'> = ['Low', 'Medium', 'High'];
+              const currentIndex = levels.indexOf(settings.competitorAI);
+              const nextLevel = levels[(currentIndex + 1) % levels.length];
+              updateSetting('competitorAI', nextLevel);
             }}
           >
             <View style={styles.settingLeft}>
               <Users size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
               <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
-                Competitor AI
+                Competitor AI Difficulty
               </Text>
             </View>
             <Text style={[styles.settingValue, isSmallScreen && styles.settingValueSmall]}>
-              {competitorAI}
+              {settings.competitorAI}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
+            <View style={styles.settingLeft}>
+              <Save size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
+              <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
+                Auto-Save Progress
+              </Text>
+            </View>
+            <Switch
+              value={settings.autoSave}
+              onValueChange={(value) => toggleSwitch('autoSave', value)}
+              trackColor={{ false: Colors.neutral[300], true: Colors.primary[400] }}
+              thumbColor={settings.autoSave ? Colors.primary[600] : Colors.neutral[100]}
+            />
+          </View>
+        </View>
+
+        <View style={[styles.settingsSection, isSmallScreen && styles.settingsSectionSmall]}>
+          <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>
+            Display Settings
+          </Text>
+
+          <View style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
+            <View style={styles.settingLeft}>
+              <Moon size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
+              <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
+                Dark Mode
+              </Text>
+            </View>
+            <Switch
+              value={settings.darkMode}
+              onValueChange={(value) => toggleSwitch('darkMode', value)}
+              trackColor={{ false: Colors.neutral[300], true: Colors.primary[400] }}
+              thumbColor={settings.darkMode ? Colors.primary[600] : Colors.neutral[100]}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}
+            onPress={() => {
+              const languages: Array<'en' | 'es' | 'fr'> = ['en', 'es', 'fr'];
+              const languageNames = { en: 'English', es: 'Español', fr: 'Français' };
+              const currentIndex = languages.indexOf(settings.language);
+              const nextLang = languages[(currentIndex + 1) % languages.length];
+              updateSetting('language', nextLang);
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <Globe size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
+              <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
+                Language
+              </Text>
+            </View>
+            <Text style={[styles.settingValue, isSmallScreen && styles.settingValueSmall]}>
+              {settings.language === 'en' ? 'English' : settings.language === 'es' ? 'Español' : 'Français'}
             </Text>
           </TouchableOpacity>
         </View>
-        
+
         <View style={[styles.settingsSection, isSmallScreen && styles.settingsSectionSmall]}>
           <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>
             Account
@@ -160,6 +250,7 @@ export default function SettingsScreen() {
             }}
           >
             <View style={styles.settingLeft}>
+              <Users size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
               <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
                 Username
               </Text>
@@ -169,15 +260,23 @@ export default function SettingsScreen() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
+          <TouchableOpacity
+            style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}
+            onPress={handleResetProgress}
+          >
             <View style={styles.settingLeft}>
-              <RefreshCw size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
-              <Text style={[styles.settingLabel, isSmallScreen && styles.settingLabelSmall]}>
+              <RefreshCw size={isSmallScreen ? 16 : 20} color={Colors.error[600]} />
+              <Text style={[styles.settingLabel, { color: Colors.error[600] }, isSmallScreen && styles.settingLabelSmall]}>
                 Reset Progress
               </Text>
             </View>
-            <SettingsIcon size={isSmallScreen ? 16 : 20} color={Colors.neutral[500]} />
           </TouchableOpacity>
+        </View>
+
+        <View style={[styles.settingsSection, isSmallScreen && styles.settingsSectionSmall]}>
+          <Text style={[styles.sectionTitle, isSmallScreen && styles.sectionTitleSmall]}>
+            Legal
+          </Text>
 
           <TouchableOpacity style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
             <View style={styles.settingLeft}>
@@ -186,7 +285,6 @@ export default function SettingsScreen() {
                 Privacy Policy
               </Text>
             </View>
-            <SettingsIcon size={isSmallScreen ? 16 : 20} color={Colors.neutral[500]} />
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}>
@@ -196,10 +294,9 @@ export default function SettingsScreen() {
                 Terms of Service
               </Text>
             </View>
-            <SettingsIcon size={isSmallScreen ? 16 : 20} color={Colors.neutral[500]} />
           </TouchableOpacity>
         </View>
-        
+
         <View style={[styles.settingsSection, isSmallScreen && styles.settingsSectionSmall]}>
           <TouchableOpacity
             style={[styles.settingItem, isSmallScreen && styles.settingItemSmall]}
@@ -211,8 +308,7 @@ export default function SettingsScreen() {
             }}
           >
             <View style={styles.settingLeft}>
-              <Shield size={isSmallScreen ? 16 : 20} color={Colors.neutral[600]} />
-              <Text style={[styles.settingLabel, { color: 'red' }, isSmallScreen && styles.settingLabelSmall]}>
+              <Text style={[styles.settingLabel, { color: Colors.error[600] }, isSmallScreen && styles.settingLabelSmall]}>
                 Logout
               </Text>
             </View>
@@ -221,12 +317,11 @@ export default function SettingsScreen() {
 
         <View style={[styles.versionContainer, isSmallScreen && styles.versionContainerSmall]}>
           <Text style={[styles.versionText, isSmallScreen && styles.versionTextSmall]}>
-            Version 1.5.0
+            Version 1.7.1
           </Text>
         </View>
       </ScrollView>
 
-      {/* Profile Edit Modal */}
       <Modal
         visible={editingField !== null}
         animationType="fade"
@@ -261,7 +356,6 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* How to Play Modal */}
       <Modal
         visible={showHowToPlay}
         animationType="slide"
@@ -274,8 +368,8 @@ export default function SettingsScreen() {
               <Text style={[styles.modalTitle, isSmallScreen && styles.modalTitleSmall]}>
                 How To Play
               </Text>
-              <TouchableOpacity 
-                style={styles.closeButton} 
+              <TouchableOpacity
+                style={styles.closeButton}
                 onPress={() => setShowHowToPlay(false)}
               >
                 <X size={isSmallScreen ? 20 : 24} color={Colors.neutral[600]} />
@@ -285,7 +379,7 @@ export default function SettingsScreen() {
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <View style={[styles.tutorialSection, isSmallScreen && styles.tutorialSectionSmall]}>
                 <Text style={[styles.tutorialTitle, isSmallScreen && styles.tutorialTitleSmall]}>
-                  🚀 Getting Started
+                  Getting Started
                 </Text>
                 <Text style={[styles.tutorialText, isSmallScreen && styles.tutorialTextSmall]}>
                   Welcome to Wallnance Tycoon! Your goal is to become a top meme coin tycoon by trading, investing, and outsmarting AI competitors.
@@ -295,7 +389,7 @@ export default function SettingsScreen() {
 
               <View style={[styles.tutorialSection, isSmallScreen && styles.tutorialSectionSmall]}>
                 <Text style={[styles.tutorialTitle, isSmallScreen && styles.tutorialTitleSmall]}>
-                  💰 Making Money
+                  Making Money
                 </Text>
                 <Text style={[styles.tutorialText, isSmallScreen && styles.tutorialTextSmall]}>
                   Generate coins through mining operations. The market value fluctuates based on
@@ -305,7 +399,7 @@ export default function SettingsScreen() {
 
               <View style={[styles.tutorialSection, isSmallScreen && styles.tutorialSectionSmall]}>
                 <Text style={[styles.tutorialTitle, isSmallScreen && styles.tutorialTitleSmall]}>
-                  👥 Building Your Team
+                  Building Your Team
                 </Text>
                 <Text style={[styles.tutorialText, isSmallScreen && styles.tutorialTextSmall]}>
                   Compete against AI investors and evolve your strategy. Your decisions impact your performance — time your trades, react to news, and dominate the leaderboard.
@@ -314,7 +408,7 @@ export default function SettingsScreen() {
 
               <View style={[styles.tutorialSection, isSmallScreen && styles.tutorialSectionSmall]}>
                 <Text style={[styles.tutorialTitle, isSmallScreen && styles.tutorialTitleSmall]}>
-                  📈 Market Strategies
+                  Market Strategies
                 </Text>
                 <Text style={[styles.tutorialText, isSmallScreen && styles.tutorialTextSmall]}>
                   Watch market trends and invest wisely. Participate in special events for bonuses and
@@ -324,7 +418,7 @@ export default function SettingsScreen() {
             </ScrollView>
 
             <GameButton
-              title="Got it! 👍"
+              title="Got it!"
               onPress={() => setShowHowToPlay(false)}
               style={[styles.closeModalButton, isSmallScreen && styles.closeModalButtonSmall]}
               textStyle={[styles.closeModalButtonText, isSmallScreen && styles.closeModalButtonTextSmall]}
@@ -447,6 +541,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Layout.spacing.md,
+    flex: 1,
   },
   settingLabel: {
     fontFamily: 'Nunito-Regular',
