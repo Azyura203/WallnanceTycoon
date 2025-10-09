@@ -107,7 +107,7 @@ export default function TabLayout() {
         paddingTop: config.padding / 2,
         paddingBottom: isWeb ? config.padding / 2 : Math.max(config.padding / 2, 6),
         // When a maxWidth is provided, use it and center the bar on large screens.
-        width: config.maxWidth ? config.maxWidth : `100%`,
+        width: config.maxWidth ? config.maxWidth : undefined,
         alignSelf: config.maxWidth ? ('center' as const) : ('stretch' as const),
         borderTopWidth: isWeb ? 1 : 0.5,
         shadowOpacity: isWeb ? 0.15 : 0.1,

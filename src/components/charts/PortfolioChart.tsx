@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Dimensions, useColorScheme } from 'react-native';
 import { PieChart, LineChart } from 'react-native-chart-kit';
 import Colors from '@/src/constants/Colors';
 import Layout from '@/src/constants/Layout';
@@ -37,26 +37,17 @@ export default function PortfolioChart({
   isMediumScreen = false,
   isTablet = false,
 }: PortfolioChartProps) {
-  // Responsive chart sizing
-  const getChartDimensions = () => {
-    const padding = isSmallScreen ? 32 : isTablet ? 64 : 48;
-    const maxWidth = isTablet ? 600 : isSmallScreen ? 320 : 400;
-    const chartWidth = Math.min(screenWidth - padding, maxWidth);
-    
-    let chartHeight;
-    if (isSmallScreen) {
-      chartHeight = Math.min(180, screenHeight * 0.25);
-    } else if (isTablet) {
-      chartHeight = Math.min(300, screenHeight * 0.35);
-    } else {
-      chartHeight = Math.min(240, screenHeight * 0.3);
-    }
-    
-    return { chartWidth, chartHeight };
-  };
+  // Responsive chart sizing using window dimensions
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const containerPadding = isSmallScreen ? 32 : isTablet ? 64 : 48;
+  const maxWidth = isTablet ? 900 : isSmallScreen ? 360 : 600;
+  const chartWidth = Math.min(Math.max(320, windowWidth - containerPadding), maxWidth);
+  const chartHeight = isSmallScreen
+    ? Math.min(220, windowHeight * 0.28)
+    : isTablet
+    ? Math.min(320, windowHeight * 0.36)
+    : Math.min(280, windowHeight * 0.32);
 
-  const { chartWidth, chartHeight } = getChartDimensions();
-  
   const [chartType, setChartType] = useState<'pie' | 'line' | 'performance'>('pie');
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
@@ -133,32 +124,49 @@ export default function PortfolioChart({
     return labels;
   };
 
-  // Enhanced chart configuration with stronger colors
+  const colorScheme = useColorScheme();
+  const isAppDark = colorScheme === 'dark';
+
+  // helper to produce rgba from hex + opacity
+  const hexToRgba = (hex: string, opacity = 1) => {
+    const parsed = hex.replace('#', '');
+    const full = parsed.length === 3 ? parsed.split('').map(c => c + c).join('') : parsed;
+    const bigint = parseInt(full, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
+  // dynamic colors for light/dark mode
+  const chartBg = isAppDark ? Colors.neutral[800] : '#FFFFFF'; // Adjusted dark mode background
+  const chartText = isAppDark ? '#E5E7EB' : '#374151'; // Adjusted text color for better contrast
+  const chartGrid = isAppDark ? '#4B5563' : '#E5E7EB'; // Adjusted grid color for better visibility
+
+  // Enhanced chart configuration with stronger colors and dark-mode support
   const getChartConfig = () => ({
-    backgroundColor: '#FFFFFF',
-    backgroundGradientFrom: '#FFFFFF',
-    backgroundGradientTo: '#FFFFFF',
+    backgroundColor: chartBg,
+    backgroundGradientFrom: hexToRgba(chartBg, 1),
+    backgroundGradientTo: hexToRgba(chartBg, 1),
     decimalPlaces: 0,
-    color: (opacity = 1) => totalChange >= 0 
-      ? `rgba(16, 185, 129, ${opacity})` 
-      : `rgba(239, 68, 68, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(55, 65, 81, ${opacity})`,
-    style: {
-      borderRadius: 16,
-    },
+    color: (opacity = 1) => totalChange >= 0
+      ? hexToRgba('#10B981', opacity)
+      : hexToRgba('#EF4444', opacity),
+    labelColor: (opacity = 1) => hexToRgba(chartText, opacity * 0.95),
+    style: { borderRadius: 12 },
     propsForDots: {
-      r: isSmallScreen ? "4" : isTablet ? "6" : "5",
-      strokeWidth: "3",
+      r: isSmallScreen ? '4' : isTablet ? '6' : '5',
+      strokeWidth: isSmallScreen ? '2' : '3',
       stroke: totalChange >= 0 ? '#059669' : '#DC2626',
       fill: totalChange >= 0 ? '#10B981' : '#EF4444',
     },
     propsForBackgroundLines: {
-      strokeDasharray: "3,3",
-      stroke: '#E5E7EB',
+      strokeDasharray: '3,3',
+      stroke: chartGrid,
       strokeWidth: 1,
     },
     fillShadowGradient: totalChange >= 0 ? '#10B981' : '#EF4444',
-    fillShadowGradientOpacity: 0.3, // Increased opacity for better visibility
+    fillShadowGradientOpacity: 0.12,
     strokeWidth: isSmallScreen ? 2 : isTablet ? 4 : 3,
   });
 
@@ -176,16 +184,16 @@ export default function PortfolioChart({
 
   // Prepare line chart data
   const lineChartData = {
-    labels: generateLabels().length > 10 
+    labels: generateLabels().length > 10
       ? generateLabels().filter((_, i) => i % Math.ceil(generateLabels().length / (isSmallScreen ? 6 : 8)) === 0)
       : generateLabels(),
     datasets: [{
-      data: portfolioHistory.length > 10 
+      data: portfolioHistory.length > 10
         ? portfolioHistory.filter((_, i) => i % Math.ceil(portfolioHistory.length / (isSmallScreen ? 6 : 8)) === 0)
         : portfolioHistory,
-      color: (opacity = 1) => totalChange >= 0 
-        ? `rgba(16, 185, 129, ${opacity})` 
-        : `rgba(239, 68, 68, ${opacity})`,
+      color: (opacity = 1) => totalChange >= 0
+        ? hexToRgba('#10B981', opacity)
+        : hexToRgba('#EF4444', opacity),
       strokeWidth: isSmallScreen ? 2 : isTablet ? 4 : 3,
     }],
   };
@@ -397,13 +405,11 @@ export default function PortfolioChart({
               height={chartHeight}
               accessor="population"
               backgroundColor="transparent"
-              paddingLeft={isSmallScreen ? "10" : isTablet ? "20" : "15"}
+              paddingLeft={(isSmallScreen ? 10 : isTablet ? 20 : 15).toString()}
               center={[0, 0]}
               absolute
-              chartConfig={{
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              }}
-              hasLegend={!isSmallScreen} // Hide legend on small screens to save space
+              chartConfig={{ color: (opacity = 1) => hexToRgba(chartText, opacity) }}
+              hasLegend={!isSmallScreen}
               avoidFalseZero={true}
             />
           ) : chartType === 'line' ? (
@@ -414,7 +420,7 @@ export default function PortfolioChart({
               chartConfig={getChartConfig()}
               bezier
               style={styles.chart}
-              withDots={portfolioHistory.length <= (isSmallScreen ? 15 : 20)}
+              withDots={true}
               withShadow={true}
               withInnerLines={true}
               withOuterLines={false}
@@ -422,6 +428,11 @@ export default function PortfolioChart({
               segments={isSmallScreen ? 3 : 4}
               withVerticalLabels={true}
               withHorizontalLabels={true}
+              onDataPointClick={(p) => {
+                // small interactive feedback — could show a tooltip / selected value
+                // keep minimal for now
+                console.log('point', p);
+              }}
             />
           ) : (
             <LineChart
@@ -686,7 +697,6 @@ const styles = StyleSheet.create({
   statsSmall: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: Layout.spacing.lg,
   },
   statsTablet: {
     alignItems: 'flex-end',
@@ -725,15 +735,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: Layout.spacing.md,
-    gap: Layout.spacing.sm,
+    // spacing handled per-button via padding/margin to avoid 'gap' usage
   },
   chartTypeContainerSmall: {
     marginBottom: Layout.spacing.sm,
-    gap: Layout.spacing.xs,
+    // spacing handled per-button
   },
   chartTypeContainerTablet: {
     marginBottom: Layout.spacing.lg,
-    gap: Layout.spacing.md,
+    // spacing handled per-button
   },
   chartTypeButton: {
     paddingVertical: 8,
@@ -1001,10 +1011,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   insightsGridSmall: {
-    gap: Layout.spacing.xs,
+    // gap removed for RN compatibility
   },
   insightsGridTablet: {
-    gap: Layout.spacing.md,
+    // gap removed for RN compatibility
   },
   insightItem: {
     alignItems: 'center',

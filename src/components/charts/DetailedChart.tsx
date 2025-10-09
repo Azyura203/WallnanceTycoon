@@ -43,8 +43,11 @@ export default function DetailedChart({
   showIndicators = true,
 }: DetailedChartProps) {
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 400;
-  const chartWidth = Math.min(width - (isSmallScreen ? 32 : 48), 380);
+  const isSmallScreen = width < 520;
+  // allow chart to grow on larger screens but leave padding
+  const containerPadding = isSmallScreen ? 32 : 48;
+  const maxChartWidth = Math.max(380, Math.min(900, width - containerPadding));
+  const chartWidth = Math.min(width - containerPadding, maxChartWidth);
   
   const [chartType, setChartType] = useState<'line' | 'candle' | 'volume'>('line');
   const [showMA, setShowMA] = useState(false);
@@ -55,7 +58,7 @@ export default function DetailedChart({
     const isPositive = change >= 0;
     return {
       primary: isPositive ? '#10B981' : '#EF4444', // Stronger green/red
-      secondary: isPositive ? '#059669' : '#DC2626', // Darker variants
+      secondary: isPositive ? '#059669' : '#DC2626',
       background: '#FFFFFF',
       grid: '#E5E7EB',
       text: '#374151',
@@ -64,6 +67,16 @@ export default function DetailedChart({
   };
 
   const colors = getChartColors();
+  
+  // helper to produce rgba from hex + opacity
+  const hexToRgba = (hex: string, opacity = 1) => {
+    const parsed = hex.replace('#', '');
+    const bigint = parseInt(parsed.length === 3 ? parsed.split('').map(c => c + c).join('') : parsed, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
 
   // Generate time labels based on range
   const generateLabels = (range: string, dataLength: number) => {
@@ -147,12 +160,12 @@ export default function DetailedChart({
     datasets: [
       {
         data,
-        color: (opacity = 1) => `${colors.primary}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+        color: (opacity = 1) => hexToRgba(colors.primary, opacity),
         strokeWidth: 3, // Increased stroke width for better visibility
       },
       ...(showMA ? [{
         data: movingAverage,
-        color: (opacity = 1) => `${colors.accent}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+        color: (opacity = 1) => hexToRgba(colors.accent, opacity),
         strokeWidth: 2,
       }] : []),
     ],
@@ -162,7 +175,7 @@ export default function DetailedChart({
     labels: chartData.labels,
     datasets: [{
       data: volumeData.length > 10 ? volumeData.filter((_, i) => i % Math.ceil(volumeData.length / 8) === 0) : volumeData,
-      color: (opacity = 1) => `rgba(156, 163, 175, ${opacity})`,
+      color: (opacity = 1) => hexToRgba('#9CA3AF', opacity),
     }],
   };
 
@@ -171,29 +184,29 @@ export default function DetailedChart({
   // Enhanced chart config with better visibility
   const getChartConfig = () => ({
     backgroundColor: colors.background,
-    backgroundGradientFrom: colors.background,
-    backgroundGradientTo: colors.background,
+    backgroundGradientFrom: hexToRgba(colors.background, 1),
+    backgroundGradientTo: hexToRgba(colors.background, 1),
     decimalPlaces: 2,
-    color: (opacity = 1) => `${colors.primary}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
-    labelColor: (opacity = 1) => `${colors.text}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+    color: (opacity = 1) => hexToRgba(colors.primary, opacity),
+    labelColor: (opacity = 1) => hexToRgba(colors.text, opacity * 0.9),
     style: {
-      borderRadius: 16,
+      borderRadius: 12,
     },
     propsForDots: {
-      r: "4",
-      strokeWidth: "3",
+      r: isSmallScreen ? '4' : '5',
+      strokeWidth: isSmallScreen ? '2' : '3',
       stroke: colors.secondary,
       fill: colors.primary,
     },
     propsForBackgroundLines: {
-      strokeDasharray: "3,3",
+      strokeDasharray: '3,3',
       stroke: colors.grid,
       strokeWidth: 1,
     },
     fillShadowGradient: colors.primary,
     fillShadowGradientFrom: colors.primary,
     fillShadowGradientTo: colors.primary,
-    fillShadowGradientOpacity: 0.2,
+    fillShadowGradientOpacity: 0.12,
     strokeWidth: 3,
     useShadowColorFromDataset: false,
   });
@@ -341,18 +354,33 @@ export default function DetailedChart({
             <LineChart
               data={chartData}
               width={chartWidth}
-              height={isSmallScreen ? 200 : 240}
+              height={isSmallScreen ? 220 : 280}
               chartConfig={getChartConfig()}
               bezier
               style={styles.chart}
-              withDots={data.length <= 20}
+              withDots={true}
               withShadow={true}
               withInnerLines={true}
               withOuterLines={false}
               withVerticalLabels={true}
               withHorizontalLabels={true}
               fromZero={false}
-              segments={4}
+              segments={5}
+              // interactive: tap points to show details
+              onDataPointClick={(point: { index: number; value: number; dataset: any }) => {
+                setSelectedPoint(point.index);
+              }}
+              // decorator to show a small vertical indicator + dot for selected point
+              decorator={() => {
+                if (selectedPoint === null) return null;
+                const total = data.length;
+                const step = chartWidth / Math.max(1, total - 1);
+                const x = step * selectedPoint;
+                const y = 12; // placeholder; LineChart decorator is absolute-positioned inside chart wrapper
+                return (
+                  <View pointerEvents="none" style={{ position: 'absolute', left: x - 1, top: 0, bottom: 0, width: 2, backgroundColor: hexToRgba(colors.primary, 0.12) }} />
+                );
+              }}
             />
           ) : (
             <BarChart
@@ -361,15 +389,17 @@ export default function DetailedChart({
               height={isSmallScreen ? 200 : 240}
               chartConfig={{
                 ...getChartConfig(),
-                color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
+                color: (opacity = 1) => hexToRgba('#6366F1', opacity),
                 fillShadowGradient: '#6366F1',
-                fillShadowGradientOpacity: 0.3,
+                fillShadowGradientOpacity: 0.32,
               }}
               style={styles.chart}
               withInnerLines={true}
               withHorizontalLabels={true}
               fromZero={true}
-              showValuesOnTopOfBars={false}
+              showValuesOnTopOfBars={true}
+              yAxisLabel={''}
+              yAxisSuffix={''}
             />
           )}
         </View>
